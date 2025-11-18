@@ -6,15 +6,13 @@ let currentDate = null;
 let tableData = [];
 let sortConfig = { key: 'today_count', direction: 'desc' };
 
-// Separate filters for Dashboard vs Trend views
+// Filters
 let filters = {
-    // Shared / Dashboard
+    // Dashboard Filters
     date: null,
     status: 'all',
-    category: 'all',
-    subcategory: 'all',
     
-    // Trend View Specific
+    // Trend View Specific Filters
     trendCategory: 'all',
     trendSubcategory: 'all'
 };
@@ -35,32 +33,19 @@ function setupEventListeners() {
     });
     
     // --- Dashboard Filters ---
+    // Only Status Filter remains
     document.getElementById('status-filter').addEventListener('change', function(e) {
         filters.status = e.target.value;
-        renderTable();
-    });
-
-    document.getElementById('category-filter').addEventListener('change', function(e) {
-        filters.category = e.target.value;
-        // Reset subcategory when category changes
-        filters.subcategory = 'all'; 
-        document.getElementById('subcategory-filter').value = 'all';
-        updateSubcategoryOptions('dashboard'); 
-        renderTable();
-    });
-
-    document.getElementById('subcategory-filter').addEventListener('change', function(e) {
-        filters.subcategory = e.target.value;
         renderTable();
     });
 
     // --- Trend Filters ---
     document.getElementById('trend-category-filter').addEventListener('change', function(e) {
         filters.trendCategory = e.target.value;
-        // Reset subcategory
+        // Reset subcategory when category changes
         filters.trendSubcategory = 'all';
         document.getElementById('trend-subcategory-filter').value = 'all';
-        updateSubcategoryOptions('trend');
+        updateSubcategoryOptions();
         renderTrendTable();
     });
 
@@ -84,7 +69,7 @@ function switchTab(tabName) {
     if (tabName === 'dashboard') {
         dashView.style.display = 'block';
         trendView.style.display = 'none';
-        renderTable(); // Re-render to apply current filters
+        renderTable(); 
     } else {
         dashView.style.display = 'none';
         trendView.style.display = 'block';
@@ -164,20 +149,18 @@ function processAggregatedData(rows, headers) {
         allCategoryData[category][trimmedDate] += count;
     }
 
-    availableDates = Array.from(allDatesSet).sort().reverse(); // Descending: Newest -> Oldest
+    availableDates = Array.from(allDatesSet).sort().reverse(); 
     if (availableDates.length === 0) {
         throw new Error("No valid dates found. Check CSV date format (expected YYYY-MM-DD).");
     }
 
-    // Initialize Filters for both views
-    populateFilterOptions('dashboard');
-    populateFilterOptions('trend');
+    // Initialize Trend Filters
+    populateFilterOptions();
 
     // Initialize Dashboard
     const latestDate = availableDates[0];
     filters.date = latestDate;
     
-    // Display Date safely
     try {
         const [y, m, d] = latestDate.split('-').map(Number);
         const dateObj = new Date(y, m - 1, d);
@@ -192,21 +175,21 @@ function processAggregatedData(rows, headers) {
     updateTableForDate(latestDate);
 }
 
-function populateFilterOptions(viewType) {
+function populateFilterOptions() {
     const categories = new Set();
     const fullCategories = Object.keys(allCategoryData);
 
     fullCategories.forEach(fullCat => {
         const parts = fullCat.split('::');
         if (parts.length > 0) {
+            // Main Category is part before first ::
             categories.add(parts[0].trim());
         }
     });
 
-    const selectId = viewType === 'dashboard' ? 'category-filter' : 'trend-category-filter';
+    const selectId = 'trend-category-filter';
     const catSelect = document.getElementById(selectId);
     
-    // Clear existing options (except first 'All' option)
     while (catSelect.options.length > 1) {
         catSelect.remove(1);
     }
@@ -218,16 +201,15 @@ function populateFilterOptions(viewType) {
         catSelect.appendChild(option);
     });
 
-    updateSubcategoryOptions(viewType); // Initial population
+    updateSubcategoryOptions(); 
 }
 
-function updateSubcategoryOptions(viewType) {
-    const selectId = viewType === 'dashboard' ? 'subcategory-filter' : 'trend-subcategory-filter';
+function updateSubcategoryOptions() {
+    const selectId = 'trend-subcategory-filter';
     const subSelect = document.getElementById(selectId);
     
-    // Get current category filter value
-    const currentCatFilter = viewType === 'dashboard' ? filters.category : filters.trendCategory;
-    const currentSubFilter = viewType === 'dashboard' ? filters.subcategory : filters.trendSubcategory;
+    const currentCatFilter = filters.trendCategory;
+    const currentSubFilter = filters.trendSubcategory;
 
     subSelect.innerHTML = '<option value="all">All Sub-categories</option>';
 
@@ -238,14 +220,14 @@ function updateSubcategoryOptions(viewType) {
         const parts = fullCat.split('::');
         const mainCat = parts[0].trim();
         
-        // If main category filter is active, only show subcats for that category
         if (currentCatFilter !== 'all' && mainCat !== currentCatFilter) {
             return;
         }
 
         if (parts.length > 1) {
-            // Sub-category is everything AFTER the first "::"
-            relevantSubcats.add(parts.slice(1).join('::').trim());
+            // STRIP PREFIX: Join everything after index 1
+            const subCatName = parts.slice(1).join('::').trim();
+            relevantSubcats.add(subCatName);
         }
     });
 
@@ -256,7 +238,6 @@ function updateSubcategoryOptions(viewType) {
         subSelect.appendChild(option);
     });
 
-    // Restore selection if valid
     if (currentSubFilter !== 'all') {
         let exists = false;
         for(let i=0; i<subSelect.options.length; i++){
@@ -265,31 +246,18 @@ function updateSubcategoryOptions(viewType) {
         if(exists) {
             subSelect.value = currentSubFilter;
         } else {
-            // Reset if previously selected subcat is no longer valid
-            if(viewType === 'dashboard') filters.subcategory = 'all';
-            else filters.trendSubcategory = 'all';
+            filters.trendSubcategory = 'all';
             subSelect.value = 'all';
         }
     }
 }
 
 function isRowVisible(fullCategory, isAnomaly, anomalyType) {
-    // 1. Status Filter (Dashboard only)
+    // Only check status for Page 1
     if (filters.status === 'anomaly' && !isAnomaly) return false;
     if (filters.status === 'high' && anomalyType !== 'high') return false;
     if (filters.status === 'low' && anomalyType !== 'low') return false;
     if (filters.status === 'normal' && isAnomaly) return false;
-
-    // 2. Category/Subcategory Split
-    const parts = fullCategory.split('::');
-    const mainCat = parts[0].trim();
-    const subCat = parts.length > 1 ? parts.slice(1).join('::').trim() : '';
-
-    // 3. Category Filter
-    if (filters.category !== 'all' && mainCat !== filters.category) return false;
-
-    // 4. Subcategory Filter
-    if (filters.subcategory !== 'all' && subCat !== filters.subcategory) return false;
 
     return true;
 }
@@ -297,6 +265,8 @@ function isRowVisible(fullCategory, isAnomaly, anomalyType) {
 function isTrendRowVisible(fullCategory) {
     const parts = fullCategory.split('::');
     const mainCat = parts[0].trim();
+    
+    // Subcategory is suffix
     const subCat = parts.length > 1 ? parts.slice(1).join('::').trim() : '';
 
     if (filters.trendCategory !== 'all' && mainCat !== filters.trendCategory) return false;
@@ -455,7 +425,6 @@ function renderTrendTable() {
     
     let headerHTML = '<th class="category-cell">Category</th><th class="text-center">% Changes</th>';
     trendDates.forEach(date => {
-        // STRICT YYYY-MM-DD FORMAT as requested
         headerHTML += `<th class="trend-date-header">${date}</th>`;
     });
     thead.innerHTML = headerHTML;
