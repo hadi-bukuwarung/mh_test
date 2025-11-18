@@ -11,11 +11,6 @@ let filters = {
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
-    // Set header date to today initially
-    const today = new Date();
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    document.getElementById('current-date').textContent = today.toLocaleDateString('en-US', options);
-    
     loadAndProcessData();
     setupEventListeners();
 });
@@ -65,15 +60,18 @@ function processData(data) {
     const allDatesSet = new Set();
 
     data.forEach(row => {
-        const category = row['real_category'];
+        const category = row['real_category'] ? row['real_category'].trim() : null;
         const createdTime = row['Created Time'];
         
         if (category && createdTime) {
-            // Extract YYYY-MM-DD
             try {
-                const dateObj = new Date(createdTime);
-                if (!isNaN(dateObj.getTime())) {
-                    const dateStr = dateObj.toISOString().split('T')[0];
+                // STRICT: Data is already UTC+7.
+                // We split by space to treat the date literally as it appears in the file.
+                // "2025-11-17 20:36:14" -> "2025-11-17"
+                const dateStr = createdTime.split(' ')[0];
+                
+                // Basic validation
+                if (dateStr.includes('-') && dateStr.length >= 10) {
                     allDatesSet.add(dateStr);
 
                     if (!categoryDateMap[category]) {
@@ -85,22 +83,32 @@ function processData(data) {
                     categoryDateMap[category][dateStr]++;
                 }
             } catch (e) {
-                // Ignore invalid dates
+                console.warn('Skipping invalid row', row);
             }
         }
     });
 
     // 2. Store global state
-    availableDates = Array.from(allDatesSet).sort((a, b) => new Date(b) - new Date(a));
+    // Sort strings descending is sufficient for ISO dates (YYYY-MM-DD)
+    availableDates = Array.from(allDatesSet).sort().reverse();
     allCategoryData = categoryDateMap;
 
     if (availableDates.length === 0) {
         throw new Error("No valid dates found in data");
     }
 
-    // 3. Select latest date automatically (No filter UI population needed)
+    // 3. Select latest date automatically
     const latestDate = availableDates[0];
     filters.date = latestDate;
+    
+    // Update Header Date Display
+    // Parse manually to avoid any timezone conversion by Date object
+    const [y, m, d] = latestDate.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d); // Local browser time, but correct date components
+    
+    const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('current-date').textContent = dateObj.toLocaleDateString('en-US', dateOptions);
+
     updateTableForDate(latestDate);
 }
 
@@ -109,7 +117,6 @@ function updateTableForDate(dateStr) {
     
     // Update column header
     document.getElementById('date-column-header').textContent = `Count (${dateStr})`;
-    document.getElementById('current-date').textContent = new Date(dateStr).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
     const processedData = [];
     const categories = Object.keys(allCategoryData);
@@ -118,16 +125,28 @@ function updateTableForDate(dateStr) {
         const counts = allCategoryData[category];
         const todayCount = counts[dateStr] || 0;
 
-        // Calculate Baseline (Moving Average of last 21 days inclusive)
+        // Calculate Baseline (Moving Average of PREVIOUS 21 days)
         let totalCount = 0;
         let daysCounted = 0;
+        const lookbackWindow = 21;
         
-        // Look back 21 days
-        const current = new Date(dateStr);
-        for (let i = 0; i < 21; i++) {
+        // SAFE DATE MATH:
+        // 1. Parse YYYY-MM-DD manually
+        const [y, m, d] = dateStr.split('-').map(Number);
+        
+        // 2. Create date at NOON (12:00) to prevent DST/Timezone shifts 
+        // from flipping the date to the previous day.
+        const current = new Date(y, m - 1, d, 12, 0, 0);
+        
+        for (let i = 1; i <= lookbackWindow; i++) {
             const d = new Date(current);
             d.setDate(d.getDate() - i);
-            const lookbackDateStr = d.toISOString().split('T')[0];
+            
+            // Format back to YYYY-MM-DD using local getters (safe because we are at Noon)
+            const ly = d.getFullYear();
+            const lm = String(d.getMonth() + 1).padStart(2, '0');
+            const ld = String(d.getDate()).padStart(2, '0');
+            const lookbackDateStr = `${ly}-${lm}-${ld}`;
             
             totalCount += (counts[lookbackDateStr] || 0);
             daysCounted++;
@@ -145,7 +164,7 @@ function updateTableForDate(dateStr) {
         if (baseline > 0) {
             percentChange = ((todayCount - baseline) / baseline) * 100;
         } else if (todayCount > 0) {
-            percentChange = 100; // Infinite increase technically
+            percentChange = 100; 
         }
 
         // Rule: Today's count exceeds baseline by >50% OR >10 tickets
@@ -175,7 +194,7 @@ function updateTableForDate(dateStr) {
     tableData = processedData;
     
     // Apply current sort
-    sortData(sortConfig.key, false); // false = don't toggle direction
+    sortData(sortConfig.key, false); 
 }
 
 function sortData(key, toggle = true) {
@@ -184,7 +203,7 @@ function sortData(key, toggle = true) {
             sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
         } else {
             sortConfig.key = key;
-            sortConfig.direction = 'desc'; // Default to desc for numbers usually
+            sortConfig.direction = 'desc'; 
             if (key === 'category') sortConfig.direction = 'asc';
         }
     }
