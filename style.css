@@ -89,66 +89,6 @@ body {
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
-/* Slider Controls */
-.controls-container {
-    background-color: #1e293b;
-    padding: 1.5rem;
-    border-radius: 0.5rem;
-    border: 1px solid #334155;
-    margin-bottom: 1.5rem;
-}
-
-.slider-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    max-width: 600px;
-}
-
-.slider-group label {
-    font-size: 0.875rem;
-    color: #94a3b8;
-    display: flex;
-    justify-content: space-between;
-}
-
-.date-range-label {
-    color: #e2e8f0;
-    font-weight: 600;
-    font-family: monospace;
-}
-
-input[type="range"] {
-    width: 100%;
-    height: 6px;
-    background: #334155;
-    border-radius: 3px;
-    outline: none;
-    -webkit-appearance: none;
-    cursor: pointer;
-}
-
-input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 18px;
-    height: 18px;
-    background: #3b82f6;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: background .15s ease-in-out;
-}
-
-input[type="range"]::-webkit-slider-thumb:hover {
-    background: #60a5fa;
-}
-
-.slider-hints {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.75rem;
-    color: #64748b;
-}
-
 /* Tables */
 .table-container {
     background-color: #1e293b;
