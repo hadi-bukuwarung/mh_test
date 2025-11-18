@@ -4,6 +4,11 @@ let sortConfig = { key: 'delta', direction: 'desc' };
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
+    // Set current date
+    const today = new Date();
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('current-date').textContent = today.toLocaleDateString('en-US', options);
+    
     loadAndProcessData();
     setupEventListeners();
 });
