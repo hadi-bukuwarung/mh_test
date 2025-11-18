@@ -49,6 +49,14 @@ function loadAndProcessData() {
         download: true,
         header: true,
         skipEmptyLines: true,
+        worker: true, // Use web worker for better performance
+        chunk: function(results, parser) {
+            // Process data in chunks for better performance
+            if (!window.ticketChunks) {
+                window.ticketChunks = [];
+            }
+            window.ticketChunks.push(...results.data);
+        },
         complete: function(results) {
             if (results.errors.length > 0) {
                 showError('Error parsing CSV file: ' + results.errors[0].message);
@@ -56,10 +64,17 @@ function loadAndProcessData() {
             }
             
             try {
-                const processedData = processCSVData(results.data);
-                tableData = processedData;
-                renderDashboard();
-                hideLoading();
+                const allData = window.ticketChunks || results.data;
+                delete window.ticketChunks;
+                
+                // Use requestIdleCallback for non-blocking processing
+                if ('requestIdleCallback' in window) {
+                    requestIdleCallback(() => {
+                        processAndRender(allData);
+                    });
+                } else {
+                    setTimeout(() => processAndRender(allData), 0);
+                }
             } catch (error) {
                 showError('Error processing data: ' + error.message);
             }
@@ -70,6 +85,13 @@ function loadAndProcessData() {
     });
 }
 
+function processAndRender(tickets) {
+    const processedData = processCSVData(tickets);
+    tableData = processedData;
+    renderDashboard();
+    hideLoading();
+}
+
 // Process CSV data
 function processCSVData(tickets) {
     // Build time series for each category
@@ -77,16 +99,17 @@ function processCSVData(tickets) {
     let maxDate = null;
     const dateSet = new Set();
 
-    tickets.forEach(ticket => {
-        // Extract date from Created Time
-        const dateMatch = ticket['Created Time'] ? ticket['Created Time'].match(/(\d{4}-\d{2}-\d{2})/) : null;
-        if (!dateMatch) return;
-        
-        const date = dateMatch[1];
+    // Single pass through tickets
+    for (let i = 0; i < tickets.length; i++) {
+        const ticket = tickets[i];
+        const createdTime = ticket['Created Time'];
         const category = ticket['real_category'];
-
-        if (!category) return;
-
+        
+        if (!createdTime || !category) continue;
+        
+        // Extract date more efficiently
+        const date = createdTime.substring(0, 10); // Get YYYY-MM-DD
+        
         dateSet.add(date);
 
         // Track maximum date
@@ -101,9 +124,9 @@ function processCSVData(tickets) {
         
         // Count tickets per day
         categorySeries[category][date] = (categorySeries[category][date] || 0) + 1;
-    });
+    }
 
-    // Store all dates and sort them
+    // Store all dates and sort them (already in Set, so unique)
     availableDates = Array.from(dateSet).sort().reverse();
     currentDate = maxDate;
     
@@ -135,10 +158,19 @@ function calculateMovingAverage(series, dates, targetDate, windowSize) {
 // Calculate metrics for a specific date
 function calculateMetricsForDate(categorySeries, targetDate) {
     const results = [];
+    const categories = Object.keys(categorySeries);
     
-    Object.keys(categorySeries).forEach(category => {
+    // Pre-sort dates once for all categories
+    const allDates = {};
+    for (let i = 0; i < categories.length; i++) {
+        const category = categories[i];
+        allDates[category] = Object.keys(categorySeries[category]).sort();
+    }
+    
+    for (let i = 0; i < categories.length; i++) {
+        const category = categories[i];
         const series = categorySeries[category];
-        const dates = Object.keys(series).sort();
+        const dates = allDates[category];
         
         // Calculate 21-day moving average
         const baseline = calculateMovingAverage(series, dates, targetDate, 21);
@@ -149,9 +181,7 @@ function calculateMetricsForDate(categorySeries, targetDate) {
         const isHighAnomaly = (delta > baseline * 0.5) || (delta > 10);
         const isAnomaly = isHighAnomaly;
         
-        let anomalyType = 'normal';
-        if (isHighAnomaly) anomalyType = 'high';
-
+        const anomalyType = isHighAnomaly ? 'high' : 'normal';
         const percentChange = baseline > 0 ? Math.round((delta / baseline) * 100) : 0;
 
         results.push({
@@ -163,7 +193,7 @@ function calculateMetricsForDate(categorySeries, targetDate) {
             anomalyType: anomalyType,
             percentChange: percentChange
         });
-    });
+    }
 
     return results;
 }
@@ -299,69 +329,51 @@ function renderDashboard() {
 // Render table
 function renderTable() {
     const tbody = document.getElementById('table-body');
-    tbody.innerHTML = '';
-    
     const filteredData = getFilteredData();
     
     if (filteredData.length === 0) {
-        const row = document.createElement('tr');
-        const cell = document.createElement('td');
-        cell.colSpan = 5;
-        cell.style.textAlign = 'center';
-        cell.style.padding = '2rem';
-        cell.style.color = '#94a3b8';
-        cell.textContent = 'No data matches the selected filters';
-        row.appendChild(cell);
-        tbody.appendChild(row);
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem; color: #94a3b8;">No data matches the selected filters</td></tr>';
         return;
     }
     
-    filteredData.forEach(item => {
+    // Use DocumentFragment for better performance
+    const fragment = document.createDocumentFragment();
+    
+    for (let i = 0; i < filteredData.length; i++) {
+        const item = filteredData[i];
         const row = document.createElement('tr');
+        
         if (item.isAnomaly) {
             row.classList.add('anomaly-row');
         }
         
-        // Category
-        const categoryCell = document.createElement('td');
-        categoryCell.classList.add('category-cell');
-        categoryCell.textContent = item.category;
-        row.appendChild(categoryCell);
+        // Build row HTML in one go
+        row.innerHTML = `
+            <td class="category-cell">${escapeHtml(item.category)}</td>
+            <td class="today-cell text-right">${item.today_count}</td>
+            <td class="baseline-cell text-right">${item.baseline}</td>
+            <td class="delta-cell text-right ${item.delta > 0 ? 'delta-positive' : item.delta < 0 ? 'delta-negative' : 'delta-neutral'}">
+                ${item.delta > 0 ? '+' : ''}${item.delta}
+            </td>
+        `;
         
-        // Today count
-        const todayCell = document.createElement('td');
-        todayCell.classList.add('today-cell', 'text-right');
-        todayCell.textContent = item.today_count;
-        row.appendChild(todayCell);
-        
-        // Baseline
-        const baselineCell = document.createElement('td');
-        baselineCell.classList.add('baseline-cell', 'text-right');
-        baselineCell.textContent = item.baseline;
-        row.appendChild(baselineCell);
-        
-        // Delta
-        const deltaCell = document.createElement('td');
-        deltaCell.classList.add('delta-cell', 'text-right');
-        if (item.delta > 0) {
-            deltaCell.classList.add('delta-positive');
-            deltaCell.textContent = '+' + item.delta;
-        } else if (item.delta < 0) {
-            deltaCell.classList.add('delta-negative');
-            deltaCell.textContent = item.delta;
-        } else {
-            deltaCell.classList.add('delta-neutral');
-            deltaCell.textContent = item.delta;
-        }
-        row.appendChild(deltaCell);
-        
-        // Anomaly badge
+        // Add badge as last cell
         const badgeCell = document.createElement('td');
         badgeCell.appendChild(createAnomalyBadge(item));
         row.appendChild(badgeCell);
         
-        tbody.appendChild(row);
-    });
+        fragment.appendChild(row);
+    }
+    
+    tbody.innerHTML = '';
+    tbody.appendChild(fragment);
+}
+
+// Escape HTML to prevent XSS
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // Create anomaly badge
