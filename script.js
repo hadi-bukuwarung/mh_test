@@ -1,11 +1,7 @@
 // Global state
-let allCategoryData = {}; // category -> { dateStr -> count }
-let allDatesSet = new Set(); // unique dates from "date" column
-let availableDates = [];      // descending
-let availableDatesAsc = [];   // ascending
-let dateIndexMap = {};        // dateStr -> index in availableDatesAsc
-let allCategories = [];       // cached category list
-
+let allCategoryData = {}; // Store all date data for each category
+let allDatesSet = new Set(); // Use Set for unique dates
+let availableDates = []; // Sorted descending (Newest first)
 let currentDate = null;
 let tableData = [];
 let sortConfig = { key: 'today_count', direction: 'desc' };
@@ -15,7 +11,7 @@ let filters = {
 };
 
 // Initialize the application
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function() {
     loadAndProcessData();
     setupEventListeners();
 });
@@ -25,23 +21,23 @@ function setupEventListeners() {
     // Sort headers for Page 1
     const headers = document.querySelectorAll('th[data-sort]');
     headers.forEach(header => {
-        header.addEventListener('click', function () {
+        header.addEventListener('click', function() {
             const sortKey = this.getAttribute('data-sort');
             sortData(sortKey);
         });
     });
-
+    
     // Status filter (Page 1)
-    document.getElementById('status-filter').addEventListener('change', function (e) {
+    document.getElementById('status-filter').addEventListener('change', function(e) {
         filters.status = e.target.value;
         renderTable();
     });
 
     // Navigation Tabs
-    document.getElementById('tab-dashboard').addEventListener('click', function () {
+    document.getElementById('tab-dashboard').addEventListener('click', function() {
         switchTab('dashboard');
     });
-    document.getElementById('tab-trends').addEventListener('click', function () {
+    document.getElementById('tab-trends').addEventListener('click', function() {
         switchTab('trends');
     });
 }
@@ -65,26 +61,21 @@ function switchTab(tabName) {
     }
 }
 
-// Load and process CSV data (aggregated view)
+// Load and process CSV data
 function loadAndProcessData() {
     // Reset storage
     allCategoryData = {};
     allDatesSet = new Set();
-    availableDates = [];
-    availableDatesAsc = [];
-    dateIndexMap = {};
-    allCategories = [];
-    tableData = [];
 
     Papa.parse('zoho_ticket.csv', {
         download: true,
         header: true,
         skipEmptyLines: true,
-        worker: true,
-        chunk: function (results) {
+        worker: true, // Keep worker for non-blocking UI
+        chunk: function(results) {
             processChunk(results.data);
         },
-        complete: function () {
+        complete: function() {
             try {
                 finalizeDataProcessing();
             } catch (err) {
@@ -92,112 +83,116 @@ function loadAndProcessData() {
                 showError('Error processing data: ' + err.message);
             }
         },
-        error: function (err) {
+        error: function(err) {
             showError('Failed to load CSV file: ' + err);
         }
     });
 }
 
-// Process each chunk of aggregated rows
-// Schema: real_category,status,channel,date,num_of_ticket
 function processChunk(rows) {
-    for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
+    // Process a chunk of rows and update the global map immediately
+    rows.forEach(row => {
+        // NEW SCHEMA MAPPING:
+        // real_category -> Category
+        // date -> Date (YYYY-MM-DD)
+        // num_of_ticket -> Count to aggregate
+        
+        const category = row['real_category'] ? row['real_category'].trim() : null;
+        const dateStr = row['date'] ? row['date'].trim() : null;
+        const ticketCountStr = row['num_of_ticket'];
+        
+        if (category && dateStr && ticketCountStr) {
+            try {
+                const count = parseInt(ticketCountStr, 10);
+                
+                // Basic validation
+                if (!isNaN(count) && dateStr.includes('-') && dateStr.length >= 10) {
+                    allDatesSet.add(dateStr);
 
-        const categoryRaw = row['real_category'];
-        const dateStr = row['date'];
-        const numTicketRaw = row['num_of_ticket'];
-
-        if (!categoryRaw || !dateStr) continue;
-
-        const category = String(categoryRaw).trim();
-        if (!category) continue;
-
-        // num_of_ticket is aggregated count
-        const count = Number(numTicketRaw) || 0;
-        if (count === 0) continue;
-
-        allDatesSet.add(dateStr);
-
-        let categoryMap = allCategoryData[category];
-        if (!categoryMap) {
-            categoryMap = {};
-            allCategoryData[category] = categoryMap;
+                    if (!allCategoryData[category]) {
+                        allCategoryData[category] = {};
+                    }
+                    
+                    // ACCUMULATE COUNTS (Since multiple rows might exist for same date/category due to channel/status splits)
+                    if (!allCategoryData[category][dateStr]) {
+                        allCategoryData[category][dateStr] = 0;
+                    }
+                    allCategoryData[category][dateStr] += count;
+                }
+            } catch (e) {
+                // Ignore invalid rows silently
+            }
         }
-
-        const prev = categoryMap[dateStr] || 0;
-        categoryMap[dateStr] = prev + count;
-    }
-}
-
-function finalizeDataProcessing() {
-    availableDatesAsc = Array.from(allDatesSet).sort();
-    if (availableDatesAsc.length === 0) {
-        throw new Error('No valid dates found in data');
-    }
-
-    availableDates = [...availableDatesAsc].reverse();
-
-    dateIndexMap = {};
-    for (let i = 0; i < availableDatesAsc.length; i++) {
-        dateIndexMap[availableDatesAsc[i]] = i;
-    }
-
-    allCategories = Object.keys(allCategoryData);
-
-    const latestDate = availableDates[0];
-    filters.date = latestDate;
-
-    // Update header date text
-    const [y, m, d] = latestDate.split('-').map(Number);
-    const dateObj = new Date(y, m - 1, d);
-    const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    document.getElementById('current-date').textContent =
-        dateObj.toLocaleDateString('en-US', dateOptions);
-
-    // Show dashboard first
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('view-dashboard').style.display = 'block';
-
-    // Build table after UI is painted
-    requestAnimationFrame(() => {
-        updateTableForDate(latestDate);
     });
 }
 
-// --- Page 1: Today vs Baseline ---
+function finalizeDataProcessing() {
+    // 2. Store global state
+    // Sort strings descending (Newest first)
+    availableDates = Array.from(allDatesSet).sort().reverse();
+
+    if (availableDates.length === 0) {
+        throw new Error("No valid dates found in data");
+    }
+
+    // 3. Setup Page 1 (Dashboard) - Select latest date automatically
+    const latestDate = availableDates[0];
+    filters.date = latestDate;
+    
+    // Update Header Date Display
+    const [y, m, d] = latestDate.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d); 
+    
+    const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('current-date').textContent = dateObj.toLocaleDateString('en-US', dateOptions);
+
+    // Hide loading and show content
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('view-dashboard').style.display = 'block';
+
+    updateTableForDate(latestDate);
+}
+
+// --- Page 1 Logic ---
 
 function updateTableForDate(dateStr) {
     currentDate = dateStr;
+    
     document.getElementById('date-column-header').textContent = `Count (${dateStr})`;
 
     const processedData = [];
-    const categories = allCategories;
-    const lookbackWindow = 21;
-    const currentIndex = dateIndexMap[dateStr];
+    const categories = Object.keys(allCategoryData);
 
-    for (let c = 0; c < categories.length; c++) {
-        const category = categories[c];
+    categories.forEach(category => {
         const counts = allCategoryData[category];
-
         const todayCount = counts[dateStr] || 0;
 
-        // Baseline from previous 21 dates in availableDatesAsc
+        // Calculate Baseline (Moving Average of PREVIOUS 21 days)
         let totalCount = 0;
         let daysCounted = 0;
-
-        if (typeof currentIndex === 'number') {
-            const startIdx = Math.max(0, currentIndex - lookbackWindow);
-            for (let i = startIdx; i < currentIndex; i++) {
-                const dStr = availableDatesAsc[i];
-                totalCount += counts[dStr] || 0;
-                daysCounted++;
-            }
+        const lookbackWindow = 21;
+        
+        // Parse YYYY-MM-DD manually to ensure stability
+        const [y, m, d] = dateStr.split('-').map(Number);
+        // Set to Noon to avoid timezone shifts
+        const current = new Date(y, m - 1, d, 12, 0, 0);
+        
+        for (let i = 1; i <= lookbackWindow; i++) {
+            const d = new Date(current);
+            d.setDate(d.getDate() - i);
+            
+            const ly = d.getFullYear();
+            const lm = String(d.getMonth() + 1).padStart(2, '0');
+            const ld = String(d.getDate()).padStart(2, '0');
+            const lookbackDateStr = `${ly}-${lm}-${ld}`;
+            
+            totalCount += (counts[lookbackDateStr] || 0);
+            daysCounted++;
         }
 
         const baseline = daysCounted > 0 ? totalCount / daysCounted : 0;
         const delta = todayCount - baseline;
-
+        
         let isAnomaly = false;
         let anomalyType = null;
         let percentChange = 0;
@@ -205,7 +200,7 @@ function updateTableForDate(dateStr) {
         if (baseline > 0) {
             percentChange = ((todayCount - baseline) / baseline) * 100;
         } else if (todayCount > 0) {
-            percentChange = 100;
+            percentChange = 100; 
         }
 
         if (todayCount > baseline * 1.5 || todayCount > baseline + 10) {
@@ -225,10 +220,10 @@ function updateTableForDate(dateStr) {
             anomalyType: anomalyType,
             percentChange: Math.round(percentChange)
         });
-    }
+    });
 
     tableData = processedData;
-    sortData(sortConfig.key, false);
+    sortData(sortConfig.key, false); 
 }
 
 function sortData(key, toggle = true) {
@@ -237,7 +232,7 @@ function sortData(key, toggle = true) {
             sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
         } else {
             sortConfig.key = key;
-            sortConfig.direction = 'desc';
+            sortConfig.direction = 'desc'; 
             if (key === 'category') sortConfig.direction = 'asc';
         }
     }
@@ -254,8 +249,8 @@ function sortData(key, toggle = true) {
         let valB = b[key];
 
         if (key === 'category') {
-            return sortConfig.direction === 'asc'
-                ? valA.localeCompare(valB)
+            return sortConfig.direction === 'asc' 
+                ? valA.localeCompare(valB) 
                 : valB.localeCompare(valA);
         }
         return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
@@ -278,15 +273,13 @@ function renderTable() {
     });
 
     if (filteredData.length === 0) {
-        tbody.innerHTML =
-            '<tr><td colspan="5" class="text-center" style="text-align:center; color: #64748b;">No data matches filters</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="text-align:center; color: #64748b;">No data matches filters</td></tr>';
         return;
     }
 
-    for (let i = 0; i < filteredData.length; i++) {
-        const item = filteredData[i];
+    filteredData.forEach(item => {
         const tr = document.createElement('tr');
-
+        
         let deltaClass = 'delta-neutral';
         if (item.delta > 0) deltaClass = 'delta-positive';
         if (item.delta < 0) deltaClass = 'delta-negative';
@@ -299,75 +292,73 @@ function renderTable() {
             <td>${createAnomalyBadge(item)}</td>
         `;
         tbody.appendChild(tr);
-    }
+    });
 }
 
-// --- Page 2: Daily Trend ---
+// --- Page 2 Logic: Daily Trend ---
 
 function renderTrendTable() {
     const tbody = document.getElementById('trend-table-body');
     const thead = document.getElementById('trend-header-row');
-
+    
     if (availableDates.length < 2) {
-        tbody.innerHTML =
-            '<tr><td colspan="100">Not enough data for trend analysis</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="100">Not enough data for trend analysis</td></tr>';
         return;
     }
 
-    // Last 14 dates, ascending
+    // 1. Determine Date Columns (Last 14 days, Ascending)
     const trendDates = availableDates.slice(0, 14).reverse();
-
-    // Header
+    
+    // 2. Build Header
     let headerHTML = '<th class="category-cell">Category</th><th>% Changes</th>';
-    for (let i = 0; i < trendDates.length; i++) {
-        const date = trendDates[i];
+    trendDates.forEach(date => {
         headerHTML += `<th class="trend-date-header">${date}</th>`;
-    }
+    });
     thead.innerHTML = headerHTML;
 
-    // Rows
-    const categories = allCategories.slice().sort();
+    // 3. Build Rows
+    const categories = Object.keys(allCategoryData).sort();
+    
     let rowsHTML = '';
-
+    
+    // Prepare comparison dates for % change (Today vs Yesterday)
     const recentDate = availableDates[0];
     const prevDate = availableDates[1];
 
-    for (let c = 0; c < categories.length; c++) {
-        const category = categories[c];
+    categories.forEach(category => {
         const counts = allCategoryData[category];
-
+        
+        // Calculate % Change
         const recentCount = counts[recentDate] || 0;
         const prevCount = counts[prevDate] || 0;
-
+        
         let changeHTML = '<span class="change-neutral">-</span>';
         let percent = 0;
 
         if (prevCount > 0) {
             percent = Math.round(((recentCount - prevCount) / prevCount) * 100);
             if (percent > 0) {
-                changeHTML =
-                    `<span class="change-positive">🔴 ↑ Increased by ${percent}%</span>`;
+                changeHTML = `<span class="change-positive">🔴 ↑ Increased by ${percent}%</span>`;
             } else if (percent < 0) {
-                changeHTML =
-                    `<span class="change-negative">🟢 ↓ Decreased by ${Math.abs(percent)}%</span>`;
+                changeHTML = `<span class="change-negative">🟢 ↓ Decreased by ${Math.abs(percent)}%</span>`;
             } else {
                 changeHTML = `<span class="change-neutral">No Change</span>`;
             }
         } else if (recentCount > 0) {
-            changeHTML =
-                `<span class="change-positive">🔴 ↑ Increased (New)</span>`;
+             changeHTML = `<span class="change-positive">🔴 ↑ Increased (New)</span>`;
         } else {
-            changeHTML = `<span class="change-neutral">0%</span>`;
+             changeHTML = `<span class="change-neutral">0%</span>`;
         }
 
+        // Build Date Cells
         let dateCells = '';
-        for (let i = 0; i < trendDates.length; i++) {
-            const date = trendDates[i];
+        trendDates.forEach(date => {
             const count = counts[date] || 0;
+            // Highlight Today
             const isToday = date === recentDate;
             const cellStyle = isToday ? 'font-weight:bold; color:#f1f5f9;' : '';
             dateCells += `<td class="trend-val" style="${cellStyle}">${count}</td>`;
-        }
+        });
 
         rowsHTML += `
             <tr>
@@ -376,7 +367,7 @@ function renderTrendTable() {
                 ${dateCells}
             </tr>
         `;
-    }
+    });
 
     tbody.innerHTML = rowsHTML;
 }
@@ -392,7 +383,7 @@ function escapeHtml(text) {
 function createAnomalyBadge(item) {
     const badge = document.createElement('div');
     badge.classList.add('badge');
-
+    
     if (!item.isAnomaly) {
         badge.classList.add('badge-normal');
         badge.innerHTML = `
@@ -402,8 +393,8 @@ function createAnomalyBadge(item) {
             <span>Normal</span>
         `;
         return badge.outerHTML;
-    }
-
+    } 
+    
     if (item.anomalyType === 'high') {
         badge.classList.add('badge-high');
         badge.innerHTML = `
@@ -425,7 +416,7 @@ function createAnomalyBadge(item) {
             <span class="badge-percent">${item.percentChange}%</span>
         `;
     }
-
+    
     return badge.outerHTML;
 }
 
