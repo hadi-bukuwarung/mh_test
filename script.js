@@ -308,70 +308,72 @@ function renderAnomalyFeed() {
     
     if (availableDates.length === 0) return;
 
-    // Define the timeframe (Latest 14 days)
+    // Use Last 14 Days Window
     const dates = availableDates.slice(0, historyWindow); 
 
-    // 1. Find categories that had ANY High Anomaly in the last 14 days
-    const problematicCats = Object.keys(allCategoryData).filter(cat => {
-        // Check every day in the window for a high anomaly
-        return dates.some(date => {
+    // 1. Pre-calculate metrics for all categories over the 14-day window
+    // and Filter: Keep categories that have AT LEAST ONE 'High Anomaly'
+    const problematicData = [];
+    const categories = Object.keys(allCategoryData);
+
+    categories.forEach(cat => {
+        const history = [];
+        let hasHighAnomaly = false;
+        let maxScore = -Infinity;
+
+        dates.forEach((date, index) => {
             const metrics = getMetricsForDate(cat, date);
-            return metrics.anomalyType === 'high';
+            history.push(metrics);
+            
+            if (metrics.anomalyType === 'high') {
+                hasHighAnomaly = true;
+                // Score: Recent dates (low index) + high delta = higher score
+                const score = (historyWindow - index) * 10000 + metrics.delta;
+                if (score > maxScore) maxScore = score;
+            }
         });
+
+        if (hasHighAnomaly) {
+            problematicData.push({
+                category: cat,
+                history: history,
+                sortScore: maxScore
+            });
+        }
     });
 
-    if (problematicCats.length === 0) {
+    if (problematicData.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding: 2rem; color: #64748b;">No high anomalies detected in the last 14 days.</td></tr>';
         return;
     }
 
-    // 2. Sort categories: 
-    // Prioritize categories with the MOST RECENT high anomalies first.
-    // Secondary sort by the MAGNITUDE (delta) of that anomaly.
-    problematicCats.sort((a, b) => {
-        const getScore = (cat) => {
-            let maxScore = -Infinity;
-            dates.forEach((date, index) => {
-                const m = getMetricsForDate(cat, date);
-                if (m.anomalyType === 'high') {
-                    // Score calculation: 
-                    // (14 - index) * 10000 ensures recent dates (lower index) have vastly higher scores.
-                    // + m.delta ensures that on the same day, the bigger anomaly wins.
-                    const score = (14 - index) * 10000 + m.delta;
-                    if (score > maxScore) maxScore = score;
-                }
-            });
-            return maxScore;
-        };
-        return getScore(b) - getScore(a);
-    });
+    // 2. Sort categories by Recency & Severity
+    problematicData.sort((a, b) => b.sortScore - a.sortScore);
 
-    // 3. Generate rows for the 14-day history of these selected categories
+    // 3. Render
     let htmlBuffer = '';
-    problematicCats.forEach(cat => {
-        dates.forEach(date => {
-            const item = getMetricsForDate(cat, date);
-            
+    problematicData.forEach(item => {
+        item.history.forEach(metrics => {
             let deltaClass = 'delta-neutral';
-            if (item.delta > 0) deltaClass = 'delta-positive';
-            if (item.delta < 0) deltaClass = 'delta-negative';
-            let deltaSign = item.delta > 0 ? '+' : '';
+            if (metrics.delta > 0) deltaClass = 'delta-positive';
+            if (metrics.delta < 0) deltaClass = 'delta-negative';
+            let deltaSign = metrics.delta > 0 ? '+' : '';
 
-            // Highlight rows that are actually anomalies
-            const rowStyle = item.anomalyType === 'high' ? 'background-color: rgba(127, 29, 29, 0.1);' : '';
+            // Highlight high anomalies subtly
+            const rowStyle = metrics.anomalyType === 'high' ? 'background-color: rgba(127, 29, 29, 0.15);' : '';
 
             htmlBuffer += `
                 <tr style="${rowStyle}">
-                    <td class="category-cell">${escapeHtml(item.category)}</td>
-                    <td style="color:#94a3b8">${item.date}</td>
-                    <td class="text-right today-cell">${item.today_count}</td>
-                    <td class="text-right baseline-cell">${item.baseline}</td>
-                    <td class="text-right delta-cell ${deltaClass}">${deltaSign}${item.delta}</td>
-                    <td>${createAnomalyBadge(item)}</td>
+                    <td class="category-cell">${escapeHtml(metrics.category)}</td>
+                    <td style="color:#94a3b8">${metrics.date}</td>
+                    <td class="text-right today-cell">${metrics.today_count}</td>
+                    <td class="text-right baseline-cell">${metrics.baseline}</td>
+                    <td class="text-right delta-cell ${deltaClass}">${deltaSign}${metrics.delta}</td>
+                    <td>${createAnomalyBadge(metrics)}</td>
                 </tr>
             `;
         });
-        // Add a subtle separator between category blocks for readability
+        // Separator
         htmlBuffer += `<tr><td colspan="6" style="background-color: #1e293b; height: 10px; padding: 0;"></td></tr>`;
     });
 
