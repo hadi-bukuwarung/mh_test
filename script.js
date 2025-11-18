@@ -31,6 +31,11 @@ function setupEventListeners() {
         renderTable();
     });
 
+    // Slider Event
+    document.getElementById('trend-slider').addEventListener('input', function() {
+        renderTrendTable();
+    });
+
     // Tabs
     document.getElementById('tab-dashboard').addEventListener('click', () => switchTab('dashboard'));
     document.getElementById('tab-trends').addEventListener('click', () => switchTab('trends'));
@@ -54,7 +59,7 @@ function switchTab(tabName) {
 }
 
 function loadAndProcessData() {
-    // NOTE: worker: false is faster for small files (<10MB) as it avoids async overhead
+    // Use worker: false for aggregated files
     Papa.parse('zoho_ticket.csv', {
         download: true,
         header: true,
@@ -62,7 +67,7 @@ function loadAndProcessData() {
         worker: false, 
         complete: function(results) {
             try {
-                processAggregatedData(results.data);
+                processAggregatedData(results.data, results.meta.fields);
             } catch (err) {
                 console.error(err);
                 showError('Error processing data: ' + err.message);
@@ -74,57 +79,88 @@ function loadAndProcessData() {
     });
 }
 
-function processAggregatedData(rows) {
+function processAggregatedData(rows, headers) {
+    if (!rows || rows.length === 0) {
+        throw new Error("CSV file is empty");
+    }
+
+    const findHeader = (target) => {
+        if (!headers) return target;
+        const match = headers.find(h => h.trim().toLowerCase().replace(/^[\uFEFF\n\r]+/, '') === target.toLowerCase());
+        return match || target; 
+    };
+
+    const catCol = findHeader('real_category');
+    const dateCol = findHeader('date');
+    const countCol = findHeader('num_of_ticket');
+
+    console.log("Detected Columns:", { catCol, dateCol, countCol });
+
+    if (!rows[0].hasOwnProperty(catCol) || !rows[0].hasOwnProperty(dateCol)) {
+        throw new Error(`Missing required columns. Found: ${headers.join(', ')}. Expected 'real_category' and 'date'.`);
+    }
+
     allCategoryData = {};
     allDatesSet = new Set();
 
-    // Optimized loop for aggregated schema:
-    // real_category, status, channel, date, num_of_ticket
     for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
         
-        const category = row['real_category']; // e.g. "Complaint::All::Massive Issue"
-        const dateStr = row['date'];           // e.g. "2025-08-01"
-        const countVal = row['num_of_ticket']; // e.g. "24"
+        const category = row[catCol];
+        const dateStr = row[dateCol];
+        let count = 1;
 
-        if (!category || !dateStr || !countVal) continue;
+        if (countCol && row[countCol]) {
+            count = parseInt(row[countCol], 10);
+            if (isNaN(count)) count = 0;
+        }
 
-        // Safe Parse
-        const count = parseInt(countVal, 10);
-        if (isNaN(count)) continue;
+        if (!category || !dateStr) continue;
 
-        // Add to Set
-        allDatesSet.add(dateStr);
+        const trimmedDate = dateStr.trim();
+        if (trimmedDate.length < 10) continue;
 
-        // Initialize Map
+        allDatesSet.add(trimmedDate);
+
         if (!allCategoryData[category]) {
             allCategoryData[category] = {};
         }
-
-        // Aggregate (Summing tickets if multiple rows exist for same cat/date)
-        if (!allCategoryData[category][dateStr]) {
-            allCategoryData[category][dateStr] = 0;
+        
+        if (!allCategoryData[category][trimmedDate]) {
+            allCategoryData[category][trimmedDate] = 0;
         }
-        allCategoryData[category][dateStr] += count;
+        allCategoryData[category][trimmedDate] += count;
     }
 
-    // Finalize
     availableDates = Array.from(allDatesSet).sort().reverse();
-
     if (availableDates.length === 0) {
-        throw new Error("No valid dates found in data");
+        throw new Error("No valid dates found. Check CSV date format (expected YYYY-MM-DD).");
     }
 
-    // Set Default Date (Most Recent)
+    // Initialize Dashboard
     const latestDate = availableDates[0];
     filters.date = latestDate;
     
-    // Update Date Display
-    const [y, m, d] = latestDate.split('-').map(Number);
-    const dateObj = new Date(y, m - 1, d);
-    document.getElementById('current-date').textContent = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    // Update Slider Max
+    const slider = document.getElementById('trend-slider');
+    const windowSize = 14;
+    if (availableDates.length > windowSize) {
+        slider.max = availableDates.length - windowSize;
+        slider.disabled = false;
+    } else {
+        slider.max = 0;
+        slider.disabled = true;
+    }
+    
+    // Display Date safely
+    try {
+        const [y, m, d] = latestDate.split('-').map(Number);
+        const dateObj = new Date(y, m - 1, d);
+        document.getElementById('current-date').textContent = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    } catch (e) {
+        document.getElementById('current-date').textContent = latestDate;
+    }
 
-    // UI Ready
     document.getElementById('loading').style.display = 'none';
     document.getElementById('view-dashboard').style.display = 'block';
 
@@ -141,15 +177,13 @@ function updateTableForDate(dateStr) {
     const categories = Object.keys(allCategoryData);
     const lookbackWindow = 21;
 
-    // Parse Date safely once
     const [y, m, d] = dateStr.split('-').map(Number);
-    const currentObj = new Date(y, m - 1, d, 12, 0, 0); // Noon to avoid DST shifts
+    const currentObj = new Date(y, m - 1, d, 12, 0, 0);
 
     categories.forEach(category => {
         const dateMap = allCategoryData[category];
         const todayCount = dateMap[dateStr] || 0;
 
-        // Baseline Logic
         let totalCount = 0;
         let daysCounted = 0;
 
@@ -157,7 +191,6 @@ function updateTableForDate(dateStr) {
             const dOffset = new Date(currentObj);
             dOffset.setDate(currentObj.getDate() - i);
             
-            // Fast format YYYY-MM-DD
             const ly = dOffset.getFullYear();
             const lm = String(dOffset.getMonth() + 1).padStart(2, '0');
             const ld = String(dOffset.getDate()).padStart(2, '0');
@@ -167,24 +200,23 @@ function updateTableForDate(dateStr) {
             daysCounted++;
         }
 
-        const baseline = daysCounted > 0 ? totalCount / daysCounted : 0;
-        const delta = todayCount - baseline;
+        const baseline = daysCounted > 0 ? parseFloat((totalCount / daysCounted).toFixed(1)) : 0;
+        const delta = parseFloat((todayCount - baseline).toFixed(1));
         
         let isAnomaly = false;
         let anomalyType = null;
         let percentChange = 0;
 
         if (baseline > 0) {
-            percentChange = ((todayCount - baseline) / baseline) * 100;
+            percentChange = Math.round(((todayCount - baseline) / baseline) * 100);
         } else if (todayCount > 0) {
             percentChange = 100;
         }
 
-        // Rules
         if (todayCount > baseline * 1.5 || todayCount > baseline + 10) {
             isAnomaly = true;
             anomalyType = 'high';
-        } else if (todayCount < baseline * 0.7) {
+        } else if (todayCount < baseline * 0.7 && baseline > 0) {
             isAnomaly = true;
             anomalyType = 'low';
         }
@@ -192,11 +224,11 @@ function updateTableForDate(dateStr) {
         processedData.push({
             category: category,
             today_count: todayCount,
-            baseline: parseFloat(baseline.toFixed(1)),
-            delta: parseFloat(delta.toFixed(1)),
+            baseline: baseline,
+            delta: delta,
             isAnomaly: isAnomaly,
             anomalyType: anomalyType,
-            percentChange: Math.round(percentChange)
+            percentChange: percentChange
         });
     });
 
@@ -239,7 +271,6 @@ function sortData(key, toggle = true) {
 
 function renderTable() {
     const tbody = document.getElementById('table-body');
-    // Batch string concatenation for DOM performance
     let htmlBuffer = '';
 
     const filteredData = tableData.filter(item => {
@@ -252,7 +283,7 @@ function renderTable() {
     });
 
     if (filteredData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="text-align:center; color: #64748b;">No data matches filters</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="text-align:center; color: #64748b; padding: 2rem;">No data matches filters</td></tr>';
         return;
     }
 
@@ -260,13 +291,14 @@ function renderTable() {
         let deltaClass = 'delta-neutral';
         if (item.delta > 0) deltaClass = 'delta-positive';
         if (item.delta < 0) deltaClass = 'delta-negative';
+        let deltaSign = item.delta > 0 ? '+' : '';
 
         htmlBuffer += `
             <tr>
                 <td class="category-cell">${escapeHtml(item.category)}</td>
                 <td class="text-right today-cell">${item.today_count}</td>
                 <td class="text-right baseline-cell">${item.baseline}</td>
-                <td class="text-right delta-cell ${deltaClass}">${item.delta > 0 ? '+' : ''}${item.delta}</td>
+                <td class="text-right delta-cell ${deltaClass}">${deltaSign}${item.delta}</td>
                 <td>${createAnomalyBadge(item)}</td>
             </tr>
         `;
@@ -280,46 +312,69 @@ function renderTable() {
 function renderTrendTable() {
     const tbody = document.getElementById('trend-table-body');
     const thead = document.getElementById('trend-header-row');
+    const slider = document.getElementById('trend-slider');
+    const labelRange = document.getElementById('slider-date-range');
     
     if (availableDates.length < 2) {
-        tbody.innerHTML = '<tr><td colspan="100">Not enough data for trend analysis</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="100" class="text-center" style="padding: 2rem; color: #94a3b8;">Not enough data for trend analysis</td></tr>';
         return;
     }
 
-    const trendDates = availableDates.slice(0, 14).reverse();
+    // Determine Slice based on Slider
+    const windowSize = 14;
+    const startIndex = parseInt(slider.value, 10);
+    const endIndex = startIndex + windowSize;
     
-    let headerHTML = '<th class="category-cell">Category</th><th>% Changes</th>';
+    // Slice valid dates. 
+    // availableDates is DESCENDING (Newest -> Oldest).
+    // We keep this order to show columns descending (Left=Newest).
+    const trendDates = availableDates.slice(startIndex, endIndex);
+    
+    // Update Label
+    if (trendDates.length > 0) {
+        const newest = trendDates[0];
+        const oldest = trendDates[trendDates.length - 1];
+        labelRange.textContent = `${newest} (Left) — ${oldest} (Right)`;
+    }
+
+    // Build Header
+    let headerHTML = '<th class="category-cell">Category</th><th class="text-center">% Changes</th>';
     trendDates.forEach(date => {
-        headerHTML += `<th class="trend-date-header">${date}</th>`;
+        const dateShort = date.substring(5); // MM-DD
+        headerHTML += `<th class="trend-date-header">${dateShort}</th>`;
     });
     thead.innerHTML = headerHTML;
 
     const categories = Object.keys(allCategoryData).sort();
     let rowsHTML = '';
     
-    const recentDate = availableDates[0];
-    const prevDate = availableDates[1];
+    // % Change logic: Compare "Newest Visible" vs "Previous Day (Hidden or next in list)"
+    // Newest visible is trendDates[0] (which is availableDates[startIndex])
+    // Comparison is availableDates[startIndex + 1]
+    const recentDate = availableDates[startIndex];
+    const prevDate = availableDates[startIndex + 1];
 
     categories.forEach(category => {
         const dateMap = allCategoryData[category];
         
         const recentCount = dateMap[recentDate] || 0;
-        const prevCount = dateMap[prevDate] || 0;
+        const prevCount = (prevDate && dateMap[prevDate]) ? dateMap[prevDate] : 0;
         
         let changeHTML = '<span class="change-neutral">-</span>';
         let percent = 0;
 
+        // Logic: ((Recent - Prev) / Prev)
         if (prevCount > 0) {
             percent = Math.round(((recentCount - prevCount) / prevCount) * 100);
             if (percent > 0) {
-                changeHTML = `<span class="change-positive">🔴 ↑ Increased by ${percent}%</span>`;
+                changeHTML = `<span class="change-positive">🔴 ↑ ${percent}%</span>`;
             } else if (percent < 0) {
-                changeHTML = `<span class="change-negative">🟢 ↓ Decreased by ${Math.abs(percent)}%</span>`;
+                changeHTML = `<span class="change-negative">🟢 ↓ ${Math.abs(percent)}%</span>`;
             } else {
-                changeHTML = `<span class="change-neutral">No Change</span>`;
+                changeHTML = `<span class="change-neutral">0%</span>`;
             }
         } else if (recentCount > 0) {
-             changeHTML = `<span class="change-positive">🔴 ↑ Increased (New)</span>`;
+             changeHTML = `<span class="change-positive">🔴 New</span>`;
         } else {
              changeHTML = `<span class="change-neutral">0%</span>`;
         }
@@ -327,8 +382,8 @@ function renderTrendTable() {
         let dateCells = '';
         trendDates.forEach(date => {
             const count = dateMap[date] || 0;
-            const isToday = date === recentDate;
-            const cellStyle = isToday ? 'font-weight:bold; color:#f1f5f9;' : '';
+            const isHead = date === recentDate;
+            const cellStyle = isHead ? 'font-weight:bold; color:#f1f5f9; background-color: rgba(59, 130, 246, 0.1);' : '';
             dateCells += `<td class="trend-val" style="${cellStyle}">${count}</td>`;
         });
 
