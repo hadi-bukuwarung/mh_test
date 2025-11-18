@@ -1,7 +1,7 @@
 // Global state
-let allCategoryData = {}; // Store all date data for each category
-let allDatesSet = new Set(); // Use Set for unique dates
-let availableDates = []; // Sorted descending (Newest first)
+let allCategoryData = {}; // Map: Category -> Date -> Count
+let allDatesSet = new Set();
+let availableDates = []; // Sorted descending
 let currentDate = null;
 let tableData = [];
 let sortConfig = { key: 'today_count', direction: 'desc' };
@@ -10,15 +10,13 @@ let filters = {
     status: 'all'
 };
 
-// Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     loadAndProcessData();
     setupEventListeners();
 });
 
-// Setup event listeners
 function setupEventListeners() {
-    // Sort headers for Page 1
+    // Sorting
     const headers = document.querySelectorAll('th[data-sort]');
     headers.forEach(header => {
         header.addEventListener('click', function() {
@@ -27,27 +25,21 @@ function setupEventListeners() {
         });
     });
     
-    // Status filter (Page 1)
+    // Status Filter
     document.getElementById('status-filter').addEventListener('change', function(e) {
         filters.status = e.target.value;
         renderTable();
     });
 
-    // Navigation Tabs
-    document.getElementById('tab-dashboard').addEventListener('click', function() {
-        switchTab('dashboard');
-    });
-    document.getElementById('tab-trends').addEventListener('click', function() {
-        switchTab('trends');
-    });
+    // Tabs
+    document.getElementById('tab-dashboard').addEventListener('click', () => switchTab('dashboard'));
+    document.getElementById('tab-trends').addEventListener('click', () => switchTab('trends'));
 }
 
 function switchTab(tabName) {
-    // Update buttons
     document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById(`tab-${tabName}`).classList.add('active');
 
-    // Update views
     const dashView = document.getElementById('view-dashboard');
     const trendView = document.getElementById('view-trends');
 
@@ -57,27 +49,20 @@ function switchTab(tabName) {
     } else {
         dashView.style.display = 'none';
         trendView.style.display = 'block';
-        renderTrendTable(); // Render on demand
+        renderTrendTable();
     }
 }
 
-// Load and process CSV data
 function loadAndProcessData() {
-    // Reset storage
-    allCategoryData = {};
-    allDatesSet = new Set();
-
+    // NOTE: worker: false is faster for small files (<10MB) as it avoids async overhead
     Papa.parse('zoho_ticket.csv', {
         download: true,
         header: true,
         skipEmptyLines: true,
-        worker: true, // Keep worker for non-blocking UI
-        chunk: function(results) {
-            processChunk(results.data);
-        },
-        complete: function() {
+        worker: false, 
+        complete: function(results) {
             try {
-                finalizeDataProcessing();
+                processAggregatedData(results.data);
             } catch (err) {
                 console.error(err);
                 showError('Error processing data: ' + err.message);
@@ -89,104 +74,96 @@ function loadAndProcessData() {
     });
 }
 
-function processChunk(rows) {
-    // Process a chunk of rows and update the global map immediately
-    rows.forEach(row => {
-        // NEW SCHEMA MAPPING:
-        // real_category -> Category
-        // date -> Date (YYYY-MM-DD)
-        // num_of_ticket -> Count to aggregate
-        
-        const category = row['real_category'] ? row['real_category'].trim() : null;
-        const dateStr = row['date'] ? row['date'].trim() : null;
-        const ticketCountStr = row['num_of_ticket'];
-        
-        if (category && dateStr && ticketCountStr) {
-            try {
-                const count = parseInt(ticketCountStr, 10);
-                
-                // Basic validation
-                if (!isNaN(count) && dateStr.includes('-') && dateStr.length >= 10) {
-                    allDatesSet.add(dateStr);
+function processAggregatedData(rows) {
+    allCategoryData = {};
+    allDatesSet = new Set();
 
-                    if (!allCategoryData[category]) {
-                        allCategoryData[category] = {};
-                    }
-                    
-                    // ACCUMULATE COUNTS (Since multiple rows might exist for same date/category due to channel/status splits)
-                    if (!allCategoryData[category][dateStr]) {
-                        allCategoryData[category][dateStr] = 0;
-                    }
-                    allCategoryData[category][dateStr] += count;
-                }
-            } catch (e) {
-                // Ignore invalid rows silently
-            }
+    // Optimized loop for aggregated schema:
+    // real_category, status, channel, date, num_of_ticket
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        
+        const category = row['real_category']; // e.g. "Complaint::All::Massive Issue"
+        const dateStr = row['date'];           // e.g. "2025-08-01"
+        const countVal = row['num_of_ticket']; // e.g. "24"
+
+        if (!category || !dateStr || !countVal) continue;
+
+        // Safe Parse
+        const count = parseInt(countVal, 10);
+        if (isNaN(count)) continue;
+
+        // Add to Set
+        allDatesSet.add(dateStr);
+
+        // Initialize Map
+        if (!allCategoryData[category]) {
+            allCategoryData[category] = {};
         }
-    });
-}
 
-function finalizeDataProcessing() {
-    // 2. Store global state
-    // Sort strings descending (Newest first)
+        // Aggregate (Summing tickets if multiple rows exist for same cat/date)
+        if (!allCategoryData[category][dateStr]) {
+            allCategoryData[category][dateStr] = 0;
+        }
+        allCategoryData[category][dateStr] += count;
+    }
+
+    // Finalize
     availableDates = Array.from(allDatesSet).sort().reverse();
 
     if (availableDates.length === 0) {
         throw new Error("No valid dates found in data");
     }
 
-    // 3. Setup Page 1 (Dashboard) - Select latest date automatically
+    // Set Default Date (Most Recent)
     const latestDate = availableDates[0];
     filters.date = latestDate;
     
-    // Update Header Date Display
+    // Update Date Display
     const [y, m, d] = latestDate.split('-').map(Number);
-    const dateObj = new Date(y, m - 1, d); 
-    
-    const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    document.getElementById('current-date').textContent = dateObj.toLocaleDateString('en-US', dateOptions);
+    const dateObj = new Date(y, m - 1, d);
+    document.getElementById('current-date').textContent = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-    // Hide loading and show content
+    // UI Ready
     document.getElementById('loading').style.display = 'none';
     document.getElementById('view-dashboard').style.display = 'block';
 
     updateTableForDate(latestDate);
 }
 
-// --- Page 1 Logic ---
+// --- Page 1: Dashboard Logic ---
 
 function updateTableForDate(dateStr) {
     currentDate = dateStr;
-    
     document.getElementById('date-column-header').textContent = `Count (${dateStr})`;
 
     const processedData = [];
     const categories = Object.keys(allCategoryData);
+    const lookbackWindow = 21;
+
+    // Parse Date safely once
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const currentObj = new Date(y, m - 1, d, 12, 0, 0); // Noon to avoid DST shifts
 
     categories.forEach(category => {
-        const counts = allCategoryData[category];
-        const todayCount = counts[dateStr] || 0;
+        const dateMap = allCategoryData[category];
+        const todayCount = dateMap[dateStr] || 0;
 
-        // Calculate Baseline (Moving Average of PREVIOUS 21 days)
+        // Baseline Logic
         let totalCount = 0;
         let daysCounted = 0;
-        const lookbackWindow = 21;
-        
-        // Parse YYYY-MM-DD manually to ensure stability
-        const [y, m, d] = dateStr.split('-').map(Number);
-        // Set to Noon to avoid timezone shifts
-        const current = new Date(y, m - 1, d, 12, 0, 0);
-        
+
         for (let i = 1; i <= lookbackWindow; i++) {
-            const d = new Date(current);
-            d.setDate(d.getDate() - i);
+            const dOffset = new Date(currentObj);
+            dOffset.setDate(currentObj.getDate() - i);
             
-            const ly = d.getFullYear();
-            const lm = String(d.getMonth() + 1).padStart(2, '0');
-            const ld = String(d.getDate()).padStart(2, '0');
+            // Fast format YYYY-MM-DD
+            const ly = dOffset.getFullYear();
+            const lm = String(dOffset.getMonth() + 1).padStart(2, '0');
+            const ld = String(dOffset.getDate()).padStart(2, '0');
             const lookbackDateStr = `${ly}-${lm}-${ld}`;
-            
-            totalCount += (counts[lookbackDateStr] || 0);
+
+            totalCount += (dateMap[lookbackDateStr] || 0);
             daysCounted++;
         }
 
@@ -200,9 +177,10 @@ function updateTableForDate(dateStr) {
         if (baseline > 0) {
             percentChange = ((todayCount - baseline) / baseline) * 100;
         } else if (todayCount > 0) {
-            percentChange = 100; 
+            percentChange = 100;
         }
 
+        // Rules
         if (todayCount > baseline * 1.5 || todayCount > baseline + 10) {
             isAnomaly = true;
             anomalyType = 'high';
@@ -223,7 +201,7 @@ function updateTableForDate(dateStr) {
     });
 
     tableData = processedData;
-    sortData(sortConfig.key, false); 
+    sortData(sortConfig.key, false);
 }
 
 function sortData(key, toggle = true) {
@@ -232,7 +210,7 @@ function sortData(key, toggle = true) {
             sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
         } else {
             sortConfig.key = key;
-            sortConfig.direction = 'desc'; 
+            sortConfig.direction = 'desc';
             if (key === 'category') sortConfig.direction = 'asc';
         }
     }
@@ -261,7 +239,8 @@ function sortData(key, toggle = true) {
 
 function renderTable() {
     const tbody = document.getElementById('table-body');
-    tbody.innerHTML = '';
+    // Batch string concatenation for DOM performance
+    let htmlBuffer = '';
 
     const filteredData = tableData.filter(item => {
         if (filters.status === 'all') return true;
@@ -278,24 +257,25 @@ function renderTable() {
     }
 
     filteredData.forEach(item => {
-        const tr = document.createElement('tr');
-        
         let deltaClass = 'delta-neutral';
         if (item.delta > 0) deltaClass = 'delta-positive';
         if (item.delta < 0) deltaClass = 'delta-negative';
 
-        tr.innerHTML = `
-            <td class="category-cell">${escapeHtml(item.category)}</td>
-            <td class="text-right today-cell">${item.today_count}</td>
-            <td class="text-right baseline-cell">${item.baseline}</td>
-            <td class="text-right delta-cell ${deltaClass}">${item.delta > 0 ? '+' : ''}${item.delta}</td>
-            <td>${createAnomalyBadge(item)}</td>
+        htmlBuffer += `
+            <tr>
+                <td class="category-cell">${escapeHtml(item.category)}</td>
+                <td class="text-right today-cell">${item.today_count}</td>
+                <td class="text-right baseline-cell">${item.baseline}</td>
+                <td class="text-right delta-cell ${deltaClass}">${item.delta > 0 ? '+' : ''}${item.delta}</td>
+                <td>${createAnomalyBadge(item)}</td>
+            </tr>
         `;
-        tbody.appendChild(tr);
     });
+
+    tbody.innerHTML = htmlBuffer;
 }
 
-// --- Page 2 Logic: Daily Trend ---
+// --- Page 2: Daily Trend Logic ---
 
 function renderTrendTable() {
     const tbody = document.getElementById('trend-table-body');
@@ -306,31 +286,25 @@ function renderTrendTable() {
         return;
     }
 
-    // 1. Determine Date Columns (Last 14 days, Ascending)
     const trendDates = availableDates.slice(0, 14).reverse();
     
-    // 2. Build Header
     let headerHTML = '<th class="category-cell">Category</th><th>% Changes</th>';
     trendDates.forEach(date => {
         headerHTML += `<th class="trend-date-header">${date}</th>`;
     });
     thead.innerHTML = headerHTML;
 
-    // 3. Build Rows
     const categories = Object.keys(allCategoryData).sort();
-    
     let rowsHTML = '';
     
-    // Prepare comparison dates for % change (Today vs Yesterday)
     const recentDate = availableDates[0];
     const prevDate = availableDates[1];
 
     categories.forEach(category => {
-        const counts = allCategoryData[category];
+        const dateMap = allCategoryData[category];
         
-        // Calculate % Change
-        const recentCount = counts[recentDate] || 0;
-        const prevCount = counts[prevDate] || 0;
+        const recentCount = dateMap[recentDate] || 0;
+        const prevCount = dateMap[prevDate] || 0;
         
         let changeHTML = '<span class="change-neutral">-</span>';
         let percent = 0;
@@ -350,11 +324,9 @@ function renderTrendTable() {
              changeHTML = `<span class="change-neutral">0%</span>`;
         }
 
-        // Build Date Cells
         let dateCells = '';
         trendDates.forEach(date => {
-            const count = counts[date] || 0;
-            // Highlight Today
+            const count = dateMap[date] || 0;
             const isToday = date === recentDate;
             const cellStyle = isToday ? 'font-weight:bold; color:#f1f5f9;' : '';
             dateCells += `<td class="trend-val" style="${cellStyle}">${count}</td>`;
@@ -375,49 +347,45 @@ function renderTrendTable() {
 // --- Utilities ---
 
 function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    if (!text) return '';
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
 function createAnomalyBadge(item) {
-    const badge = document.createElement('div');
-    badge.classList.add('badge');
-    
     if (!item.isAnomaly) {
-        badge.classList.add('badge-normal');
-        badge.innerHTML = `
-            <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            <span>Normal</span>
+        return `
+            <div class="badge badge-normal">
+                <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>Normal</span>
+            </div>
         `;
-        return badge.outerHTML;
     } 
     
     if (item.anomalyType === 'high') {
-        badge.classList.add('badge-high');
-        badge.innerHTML = `
-            <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                <polyline points="17 6 23 6 23 12"></polyline>
-            </svg>
-            <span>High Anomaly</span>
-            <span class="badge-percent">+${item.percentChange}%</span>
+        return `
+            <div class="badge badge-high">
+                <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                    <polyline points="17 6 23 6 23 12"></polyline>
+                </svg>
+                <span>High Anomaly</span>
+                <span class="badge-percent">+${item.percentChange}%</span>
+            </div>
         `;
-    } else if (item.anomalyType === 'low') {
-        badge.classList.add('badge-low');
-        badge.innerHTML = `
-            <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
-                <polyline points="17 18 23 18 23 12"></polyline>
-            </svg>
-            <span>Low Anomaly</span>
-            <span class="badge-percent">${item.percentChange}%</span>
+    } else {
+        return `
+            <div class="badge badge-low">
+                <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
+                    <polyline points="17 18 23 18 23 12"></polyline>
+                </svg>
+                <span>Low Anomaly</span>
+                <span class="badge-percent">${item.percentChange}%</span>
+            </div>
         `;
     }
-    
-    return badge.outerHTML;
 }
 
 function showError(message) {
