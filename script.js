@@ -2,6 +2,10 @@
 let allCategoryData = {}; // Store all date data for each category
 let allDatesSet = new Set(); // Use Set for unique dates
 let availableDates = []; // Sorted descending (Newest first)
+let availableDatesAsc = []; // Sorted ascending
+let dateIndexMap = {}; // Map dateStr -> index in availableDatesAsc
+let allCategories = []; // Cached category list
+
 let currentDate = null;
 let tableData = [];
 let sortConfig = { key: 'today_count', direction: 'desc' };
@@ -66,14 +70,19 @@ function loadAndProcessData() {
     // Reset storage
     allCategoryData = {};
     allDatesSet = new Set();
+    availableDates = [];
+    availableDatesAsc = [];
+    dateIndexMap = {};
+    allCategories = [];
+    tableData = [];
 
     Papa.parse('zoho_ticket.csv', {
         download: true,
         header: true,
         skipEmptyLines: true,
-        worker: true, // ENABLE WORKER: Runs parsing in background thread
+        worker: true, // Runs parsing in background thread
         chunk: function(results) {
-            // STREAMING: Process data in chunks instead of all at once
+            // Process data in chunks
             processChunk(results.data);
         },
         complete: function() {
@@ -91,49 +100,57 @@ function loadAndProcessData() {
 }
 
 function processChunk(rows) {
-    // Process a chunk of rows and update the global map immediately
-    // This avoids keeping the huge "results" object in memory
-    rows.forEach(row => {
-        const category = row['real_category'] ? row['real_category'].trim() : null;
+    // Process a chunk of rows and update the global map
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const categoryRaw = row['real_category'];
         const createdTime = row['Created Time'];
-        
-        if (category && createdTime) {
-            try {
-                // STRICT: Data is already UTC+7.
-                // We split by space to treat the date literally as it appears in the file.
-                const dateStr = createdTime.split(' ')[0];
-                
-                if (dateStr.includes('-') && dateStr.length >= 10) {
-                    allDatesSet.add(dateStr);
 
-                    if (!allCategoryData[category]) {
-                        allCategoryData[category] = {};
-                    }
-                    if (!allCategoryData[category][dateStr]) {
-                        allCategoryData[category][dateStr] = 0;
-                    }
-                    allCategoryData[category][dateStr]++;
-                }
-            } catch (e) {
-                // Ignore invalid rows in chunk silently to keep speed up
-            }
+        if (!categoryRaw || !createdTime) continue;
+
+        const category = categoryRaw.trim();
+        if (!category) continue;
+
+        // Treat date literally as appears in file (YYYY-MM-DD part)
+        const spaceIdx = createdTime.indexOf(' ');
+        const dateStr = spaceIdx > 0 ? createdTime.slice(0, spaceIdx) : createdTime;
+
+        if (!dateStr || dateStr.length < 10 || !dateStr.includes('-')) continue;
+
+        allDatesSet.add(dateStr);
+
+        let categoryMap = allCategoryData[category];
+        if (!categoryMap) {
+            categoryMap = {};
+            allCategoryData[category] = categoryMap;
         }
-    });
+
+        const prev = categoryMap[dateStr] || 0;
+        categoryMap[dateStr] = prev + 1;
+    }
 }
 
 function finalizeDataProcessing() {
-    // 2. Store global state
-    // Sort strings descending (Newest first)
-    availableDates = Array.from(allDatesSet).sort().reverse();
-
-    if (availableDates.length === 0) {
+    // Build sorted date lists and index map
+    availableDatesAsc = Array.from(allDatesSet).sort(); // ascending
+    if (availableDatesAsc.length === 0) {
         throw new Error("No valid dates found in data");
     }
 
-    // 3. Setup Page 1 (Dashboard) - Select latest date automatically
+    availableDates = [...availableDatesAsc].reverse(); // descending
+
+    dateIndexMap = {};
+    for (let i = 0; i < availableDatesAsc.length; i++) {
+        dateIndexMap[availableDatesAsc[i]] = i;
+    }
+
+    // Cache categories
+    allCategories = Object.keys(allCategoryData);
+
+    // Select latest date automatically
     const latestDate = availableDates[0];
     filters.date = latestDate;
-    
+
     // Update Header Date Display
     const [y, m, d] = latestDate.split('-').map(Number);
     const dateObj = new Date(y, m - 1, d); 
@@ -141,11 +158,14 @@ function finalizeDataProcessing() {
     const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('current-date').textContent = dateObj.toLocaleDateString('en-US', dateOptions);
 
-    // Hide loading and show content
+    // Hide loading and show content before heavy work, so UI paints first
     document.getElementById('loading').style.display = 'none';
     document.getElementById('view-dashboard').style.display = 'block';
 
-    updateTableForDate(latestDate);
+    // Defer table build to next frame to keep UI responsive
+    requestAnimationFrame(() => {
+        updateTableForDate(latestDate);
+    });
 }
 
 // --- Page 1 Logic ---
@@ -156,31 +176,28 @@ function updateTableForDate(dateStr) {
     document.getElementById('date-column-header').textContent = `Count (${dateStr})`;
 
     const processedData = [];
-    const categories = Object.keys(allCategoryData);
+    const categories = allCategories;
 
-    categories.forEach(category => {
+    const lookbackWindow = 14;
+    const currentIndex = dateIndexMap[dateStr];
+
+    for (let c = 0; c < categories.length; c++) {
+        const category = categories[c];
         const counts = allCategoryData[category];
+
         const todayCount = counts[dateStr] || 0;
 
-        // Calculate Baseline (Moving Average of PREVIOUS 21 days)
+        // Baseline using previous 14 indices in availableDatesAsc
         let totalCount = 0;
         let daysCounted = 0;
-        const lookbackWindow = 21;
-        
-        const [y, m, d] = dateStr.split('-').map(Number);
-        const current = new Date(y, m - 1, d, 12, 0, 0);
-        
-        for (let i = 1; i <= lookbackWindow; i++) {
-            const d = new Date(current);
-            d.setDate(d.getDate() - i);
-            
-            const ly = d.getFullYear();
-            const lm = String(d.getMonth() + 1).padStart(2, '0');
-            const ld = String(d.getDate()).padStart(2, '0');
-            const lookbackDateStr = `${ly}-${lm}-${ld}`;
-            
-            totalCount += (counts[lookbackDateStr] || 0);
-            daysCounted++;
+
+        if (typeof currentIndex === 'number') {
+            const startIdx = Math.max(0, currentIndex - lookbackWindow);
+            for (let i = startIdx; i < currentIndex; i++) {
+                const dStr = availableDatesAsc[i];
+                totalCount += counts[dStr] || 0;
+                daysCounted++;
+            }
         }
 
         const baseline = daysCounted > 0 ? totalCount / daysCounted : 0;
@@ -193,7 +210,7 @@ function updateTableForDate(dateStr) {
         if (baseline > 0) {
             percentChange = ((todayCount - baseline) / baseline) * 100;
         } else if (todayCount > 0) {
-            percentChange = 100; 
+            percentChange = 100;
         }
 
         if (todayCount > baseline * 1.5 || todayCount > baseline + 10) {
@@ -213,7 +230,7 @@ function updateTableForDate(dateStr) {
             anomalyType: anomalyType,
             percentChange: Math.round(percentChange)
         });
-    });
+    }
 
     tableData = processedData;
     sortData(sortConfig.key, false); 
@@ -225,7 +242,7 @@ function sortData(key, toggle = true) {
             sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
         } else {
             sortConfig.key = key;
-            sortConfig.direction = 'desc'; 
+            sortConfig.direction = 'desc';
             if (key === 'category') sortConfig.direction = 'asc';
         }
     }
@@ -270,7 +287,8 @@ function renderTable() {
         return;
     }
 
-    filteredData.forEach(item => {
+    for (let i = 0; i < filteredData.length; i++) {
+        const item = filteredData[i];
         const tr = document.createElement('tr');
         
         let deltaClass = 'delta-neutral';
@@ -285,7 +303,7 @@ function renderTable() {
             <td>${createAnomalyBadge(item)}</td>
         `;
         tbody.appendChild(tr);
-    });
+    }
 }
 
 // --- Page 2 Logic: Daily Trend ---
@@ -299,39 +317,35 @@ function renderTrendTable() {
         return;
     }
 
-    // 1. Determine Date Columns (Last 14 days, Ascending)
-    // availableDates is Descending (Newest First). Slice 0-14, then Reverse.
+    // Date Columns (Last 14 days, ascending)
     const trendDates = availableDates.slice(0, 14).reverse();
     
-    // 2. Build Header
+    // Build Header
     let headerHTML = '<th class="category-cell">Category</th><th>% Changes</th>';
-    trendDates.forEach(date => {
+    for (let i = 0; i < trendDates.length; i++) {
+        const date = trendDates[i];
         headerHTML += `<th class="trend-date-header">${date}</th>`;
-    });
+    }
     thead.innerHTML = headerHTML;
 
-    // 3. Build Rows
-    const categories = Object.keys(allCategoryData).sort();
-    
+    // Build Rows
+    const categories = allCategories.slice().sort();
     let rowsHTML = '';
     
-    // Prepare comparison dates for % change (Today vs Yesterday)
-    // availableDates[0] is Today (Most Recent)
-    // availableDates[1] is Yesterday (Previous Available Day)
+    // Recent vs previous date
     const recentDate = availableDates[0];
     const prevDate = availableDates[1];
 
-    categories.forEach(category => {
+    for (let c = 0; c < categories.length; c++) {
+        const category = categories[c];
         const counts = allCategoryData[category];
-        
-        // Calculate % Change
+
         const recentCount = counts[recentDate] || 0;
         const prevCount = counts[prevDate] || 0;
         
         let changeHTML = '<span class="change-neutral">-</span>';
         let percent = 0;
 
-        // Logic: ((today - prev) / prev) * 100
         if (prevCount > 0) {
             percent = Math.round(((recentCount - prevCount) / prevCount) * 100);
             if (percent > 0) {
@@ -342,21 +356,19 @@ function renderTrendTable() {
                 changeHTML = `<span class="change-neutral">No Change</span>`;
             }
         } else if (recentCount > 0) {
-             // Infinite increase (0 -> X)
              changeHTML = `<span class="change-positive">🔴 ↑ Increased (New)</span>`;
         } else {
              changeHTML = `<span class="change-neutral">0%</span>`;
         }
 
-        // Build Date Cells
         let dateCells = '';
-        trendDates.forEach(date => {
+        for (let i = 0; i < trendDates.length; i++) {
+            const date = trendDates[i];
             const count = counts[date] || 0;
-            // Highlight Today
             const isToday = date === recentDate;
             const cellStyle = isToday ? 'font-weight:bold; color:#f1f5f9;' : '';
             dateCells += `<td class="trend-val" style="${cellStyle}">${count}</td>`;
-        });
+        }
 
         rowsHTML += `
             <tr>
@@ -365,7 +377,7 @@ function renderTrendTable() {
                 ${dateCells}
             </tr>
         `;
-    });
+    }
 
     tbody.innerHTML = rowsHTML;
 }
