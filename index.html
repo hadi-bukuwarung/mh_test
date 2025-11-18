@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Anomaly Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Ticket Anomaly Dashboard</h1>
+            <p>21-day baseline comparison with anomaly detection</p>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Loading ticket data...</p>
+        </div>
+
+        <div id="error" class="error-message" style="display: none;">
+            <div class="error-content">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <div>
+                    <h2>Error Loading Data</h2>
+                    <p id="error-text"></p>
+                </div>
+            </div>
+        </div>
+
+        <div id="content" style="display: none;">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Categories</div>
+                    <div class="stat-value" id="total-categories">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Anomalies Detected</div>
+                    <div class="stat-value anomaly" id="anomaly-count">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Anomaly Rate</div>
+                    <div class="stat-value warning" id="anomaly-rate">0%</div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="data-table">
+                    <thead>
+                        <tr>
+                            <th data-sort="category">Category <span class="sort-arrow"></span></th>
+                            <th data-sort="today_count" class="text-right">Today <span class="sort-arrow"></span></th>
+                            <th data-sort="baseline" class="text-right">Baseline (21d) <span class="sort-arrow"></span></th>
+                            <th data-sort="delta" class="text-right">Delta <span class="sort-arrow"></span></th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="info-box">
+                <h3>Anomaly Detection Rules</h3>
+                <ul>
+                    <li>High Anomaly: Today's count exceeds baseline by &gt;50% OR &gt;10 tickets</li>
+                    <li>Low Anomaly: Today's count is &lt;70% of baseline</li>
+                    <li>Baseline: 21-day moving average including today</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
