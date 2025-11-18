@@ -1,7 +1,7 @@
 // Global state
 let allCategoryData = {}; // Map: Category -> Date -> Count
 let allDatesSet = new Set();
-let availableDates = []; // Sorted descending
+let availableDates = []; // Sorted descending (Index 0 = Newest)
 let currentDate = null;
 let tableData = [];
 let sortConfig = { key: 'today_count', direction: 'desc' };
@@ -54,7 +54,10 @@ function switchTab(tabName) {
     } else {
         dashView.style.display = 'none';
         trendView.style.display = 'block';
-        renderTrendTable();
+        // Only render if data is ready
+        if (availableDates.length > 0) {
+            renderTrendTable();
+        }
     }
 }
 
@@ -132,7 +135,7 @@ function processAggregatedData(rows, headers) {
         allCategoryData[category][trimmedDate] += count;
     }
 
-    availableDates = Array.from(allDatesSet).sort().reverse();
+    availableDates = Array.from(allDatesSet).sort().reverse(); // Descending: Newest -> Oldest
     if (availableDates.length === 0) {
         throw new Error("No valid dates found. Check CSV date format (expected YYYY-MM-DD).");
     }
@@ -144,11 +147,18 @@ function processAggregatedData(rows, headers) {
     // Update Slider Max
     const slider = document.getElementById('trend-slider');
     const windowSize = 14;
-    if (availableDates.length > windowSize) {
-        slider.max = availableDates.length - windowSize;
+    
+    // Calculate max scroll position
+    const maxScroll = Math.max(0, availableDates.length - windowSize);
+    
+    if (maxScroll > 0) {
+        slider.max = maxScroll;
         slider.disabled = false;
+        // Set slider to Right (Latest) by default
+        slider.value = maxScroll;
     } else {
         slider.max = 0;
+        slider.value = 0;
         slider.disabled = true;
     }
     
@@ -320,17 +330,26 @@ function renderTrendTable() {
         return;
     }
 
-    // Determine Slice based on Slider
     const windowSize = 14;
-    const startIndex = parseInt(slider.value, 10);
+    
+    // Slider Logic (Inverted):
+    // slider.value = 0 (Left) => Show Oldest Dates
+    // slider.value = Max (Right) => Show Newest Dates
+    // availableDates is sorted [Newest ... Oldest]
+    // We want startIndex (index in availableDates) to be 0 when slider is Max.
+    
+    const maxSliderVal = parseInt(slider.max, 10);
+    const currentSliderVal = parseInt(slider.value, 10);
+    
+    // If slider is at Max (Right), startIndex = 0 (Newest)
+    // If slider is at 0 (Left), startIndex = maxSliderVal (Oldest possible start)
+    const startIndex = maxSliderVal - currentSliderVal;
     const endIndex = startIndex + windowSize;
     
-    // Slice valid dates. 
-    // availableDates is DESCENDING (Newest -> Oldest).
-    // We keep this order to show columns descending (Left=Newest).
+    // Slice the array. Order remains Descending (Newest -> Oldest) for columns
     const trendDates = availableDates.slice(startIndex, endIndex);
     
-    // Update Label
+    // Update Label: Show Newest (Left Column) -> Oldest (Right Column)
     if (trendDates.length > 0) {
         const newest = trendDates[0];
         const oldest = trendDates[trendDates.length - 1];
@@ -348,9 +367,9 @@ function renderTrendTable() {
     const categories = Object.keys(allCategoryData).sort();
     let rowsHTML = '';
     
-    // % Change logic: Compare "Newest Visible" vs "Previous Day (Hidden or next in list)"
-    // Newest visible is trendDates[0] (which is availableDates[startIndex])
-    // Comparison is availableDates[startIndex + 1]
+    // % Change Calculation:
+    // Compare "Newest Visible Date" (trendDates[0]) 
+    // vs "Previous Day" (availableDates[startIndex + 1])
     const recentDate = availableDates[startIndex];
     const prevDate = availableDates[startIndex + 1];
 
@@ -382,6 +401,7 @@ function renderTrendTable() {
         let dateCells = '';
         trendDates.forEach(date => {
             const count = dateMap[date] || 0;
+            // Highlight the "Most Recent" column in the current window
             const isHead = date === recentDate;
             const cellStyle = isHead ? 'font-weight:bold; color:#f1f5f9; background-color: rgba(59, 130, 246, 0.1);' : '';
             dateCells += `<td class="trend-val" style="${cellStyle}">${count}</td>`;
