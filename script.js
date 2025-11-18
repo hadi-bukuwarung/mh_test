@@ -304,53 +304,75 @@ function renderTable() {
 
 function renderAnomalyFeed() {
     const tbody = document.getElementById('feed-table-body');
-    const latestDate = availableDates[0];
     const historyWindow = 14;
     
-    // 1. Find categories that are High Anomaly TODAY
-    const highAnomalyCats = Object.keys(allCategoryData).filter(cat => {
-        const metrics = getMetricsForDate(cat, latestDate);
-        return metrics.anomalyType === 'high';
-    });
+    if (availableDates.length === 0) return;
 
-    if (highAnomalyCats.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding: 2rem; color: #64748b;">No high anomalies detected today.</td></tr>';
-        return;
-    }
+    // Define the timeframe (Latest 14 days)
+    const dates = availableDates.slice(0, historyWindow); 
 
-    // 2. Generate history for these categories
-    const feedRows = [];
-    const dates = availableDates.slice(0, historyWindow); // Latest 14 days
-
-    // Sort categories by severity (highest delta today)
-    highAnomalyCats.sort((a, b) => {
-        return getMetricsForDate(b, latestDate).delta - getMetricsForDate(a, latestDate).delta;
-    });
-
-    highAnomalyCats.forEach(cat => {
-        dates.forEach(date => {
-            feedRows.push(getMetricsForDate(cat, date));
+    // 1. Find categories that had ANY High Anomaly in the last 14 days
+    const problematicCats = Object.keys(allCategoryData).filter(cat => {
+        // Check every day in the window for a high anomaly
+        return dates.some(date => {
+            const metrics = getMetricsForDate(cat, date);
+            return metrics.anomalyType === 'high';
         });
     });
 
-    // Render
-    let htmlBuffer = '';
-    feedRows.forEach(item => {
-        let deltaClass = 'delta-neutral';
-        if (item.delta > 0) deltaClass = 'delta-positive';
-        if (item.delta < 0) deltaClass = 'delta-negative';
-        let deltaSign = item.delta > 0 ? '+' : '';
+    if (problematicCats.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding: 2rem; color: #64748b;">No high anomalies detected in the last 14 days.</td></tr>';
+        return;
+    }
 
-        htmlBuffer += `
-            <tr>
-                <td class="category-cell">${escapeHtml(item.category)}</td>
-                <td style="color:#94a3b8">${item.date}</td>
-                <td class="text-right today-cell">${item.today_count}</td>
-                <td class="text-right baseline-cell">${item.baseline}</td>
-                <td class="text-right delta-cell ${deltaClass}">${deltaSign}${item.delta}</td>
-                <td>${createAnomalyBadge(item)}</td>
-            </tr>
-        `;
+    // 2. Sort categories: 
+    // Prioritize categories with the MOST RECENT high anomalies first.
+    // Secondary sort by the MAGNITUDE (delta) of that anomaly.
+    problematicCats.sort((a, b) => {
+        const getScore = (cat) => {
+            let maxScore = -Infinity;
+            dates.forEach((date, index) => {
+                const m = getMetricsForDate(cat, date);
+                if (m.anomalyType === 'high') {
+                    // Score calculation: 
+                    // (14 - index) * 10000 ensures recent dates (lower index) have vastly higher scores.
+                    // + m.delta ensures that on the same day, the bigger anomaly wins.
+                    const score = (14 - index) * 10000 + m.delta;
+                    if (score > maxScore) maxScore = score;
+                }
+            });
+            return maxScore;
+        };
+        return getScore(b) - getScore(a);
+    });
+
+    // 3. Generate rows for the 14-day history of these selected categories
+    let htmlBuffer = '';
+    problematicCats.forEach(cat => {
+        dates.forEach(date => {
+            const item = getMetricsForDate(cat, date);
+            
+            let deltaClass = 'delta-neutral';
+            if (item.delta > 0) deltaClass = 'delta-positive';
+            if (item.delta < 0) deltaClass = 'delta-negative';
+            let deltaSign = item.delta > 0 ? '+' : '';
+
+            // Highlight rows that are actually anomalies
+            const rowStyle = item.anomalyType === 'high' ? 'background-color: rgba(127, 29, 29, 0.1);' : '';
+
+            htmlBuffer += `
+                <tr style="${rowStyle}">
+                    <td class="category-cell">${escapeHtml(item.category)}</td>
+                    <td style="color:#94a3b8">${item.date}</td>
+                    <td class="text-right today-cell">${item.today_count}</td>
+                    <td class="text-right baseline-cell">${item.baseline}</td>
+                    <td class="text-right delta-cell ${deltaClass}">${deltaSign}${item.delta}</td>
+                    <td>${createAnomalyBadge(item)}</td>
+                </tr>
+            `;
+        });
+        // Add a subtle separator between category blocks for readability
+        htmlBuffer += `<tr><td colspan="6" style="background-color: #1e293b; height: 10px; padding: 0;"></td></tr>`;
     });
 
     tbody.innerHTML = htmlBuffer;
