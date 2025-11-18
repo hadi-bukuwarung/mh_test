@@ -2,6 +2,8 @@
 let allCategoryData = {}; // Map: Category -> Date -> Count
 let allDatesSet = new Set();
 let availableDates = []; // Sorted descending (Index 0 = Newest)
+let allWeeklyData = {}; // Map: Category -> WeekStr -> Count
+let availableWeeks = []; // Sorted descending (YYYY-MM-DD of Monday)
 let currentDate = null;
 let tableData = [];
 let sortConfig = { key: 'today_count', direction: 'desc' };
@@ -11,7 +13,9 @@ let filters = {
     date: null,
     status: 'all',
     trendCategory: 'all',
-    trendSubcategory: 'all'
+    trendSubcategory: 'all',
+    weeklyCategory: 'all',
+    weeklySubcategory: 'all'
 };
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -40,7 +44,7 @@ function setupEventListeners() {
         filters.trendCategory = e.target.value;
         filters.trendSubcategory = 'all';
         document.getElementById('trend-subcategory-filter').value = 'all';
-        updateSubcategoryOptions();
+        updateSubcategoryOptions('trend');
         renderTrendTable();
     });
 
@@ -49,9 +53,24 @@ function setupEventListeners() {
         renderTrendTable();
     });
 
+    // Weekly Filters
+    document.getElementById('weekly-category-filter').addEventListener('change', function(e) {
+        filters.weeklyCategory = e.target.value;
+        filters.weeklySubcategory = 'all';
+        document.getElementById('weekly-subcategory-filter').value = 'all';
+        updateSubcategoryOptions('weekly');
+        renderWeeklyTable();
+    });
+
+    document.getElementById('weekly-subcategory-filter').addEventListener('change', function(e) {
+        filters.weeklySubcategory = e.target.value;
+        renderWeeklyTable();
+    });
+
     // Tabs
     document.getElementById('tab-dashboard').addEventListener('click', () => switchTab('dashboard'));
     document.getElementById('tab-trends').addEventListener('click', () => switchTab('trends'));
+    document.getElementById('tab-weekly').addEventListener('click', () => switchTab('weekly'));
     document.getElementById('tab-feed').addEventListener('click', () => switchTab('feed'));
 }
 
@@ -59,7 +78,7 @@ function switchTab(tabName) {
     document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById(`tab-${tabName}`).classList.add('active');
 
-    const views = ['view-dashboard', 'view-trends', 'view-feed'];
+    const views = ['view-dashboard', 'view-trends', 'view-weekly', 'view-feed'];
     views.forEach(id => document.getElementById(id).style.display = 'none');
 
     if (tabName === 'dashboard') {
@@ -68,6 +87,9 @@ function switchTab(tabName) {
     } else if (tabName === 'trends') {
         document.getElementById('view-trends').style.display = 'block';
         if (availableDates.length > 0) renderTrendTable();
+    } else if (tabName === 'weekly') {
+        document.getElementById('view-weekly').style.display = 'block';
+        if (availableWeeks.length > 0) renderWeeklyTable();
     } else if (tabName === 'feed') {
         document.getElementById('view-feed').style.display = 'block';
         if (availableDates.length > 0) renderAnomalyFeed();
@@ -113,6 +135,23 @@ function processAggregatedData(rows, headers) {
 
     allCategoryData = {};
     allDatesSet = new Set();
+    allWeeklyData = {};
+    let weeklySet = new Set();
+
+    // Helper to get Monday of the week
+    const getMonday = (d) => {
+        const date = new Date(d);
+        const day = date.getDay();
+        const diff = date.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+        return new Date(date.setDate(diff));
+    };
+
+    const formatDate = (date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    };
 
     for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
@@ -130,23 +169,44 @@ function processAggregatedData(rows, headers) {
         const trimmedDate = dateStr.trim();
         if (trimmedDate.length < 10) continue;
 
+        // Daily Data
         allDatesSet.add(trimmedDate);
-
-        if (!allCategoryData[category]) {
-            allCategoryData[category] = {};
-        }
-        if (!allCategoryData[category][trimmedDate]) {
-            allCategoryData[category][trimmedDate] = 0;
-        }
+        if (!allCategoryData[category]) allCategoryData[category] = {};
+        if (!allCategoryData[category][trimmedDate]) allCategoryData[category][trimmedDate] = 0;
         allCategoryData[category][trimmedDate] += count;
+
+        // Weekly Data
+        const [y, m, d] = trimmedDate.split('-').map(Number);
+        const dateObj = new Date(y, m - 1, d);
+        const mondayObj = getMonday(dateObj);
+        const weekStr = formatDate(mondayObj);
+
+        weeklySet.add(weekStr);
+        if (!allWeeklyData[category]) allWeeklyData[category] = {};
+        if (!allWeeklyData[category][weekStr]) allWeeklyData[category][weekStr] = 0;
+        allWeeklyData[category][weekStr] += count;
     }
 
+    // Process Daily Dates
     availableDates = Array.from(allDatesSet).sort().reverse(); 
-    if (availableDates.length === 0) {
-        throw new Error("No valid dates found.");
+    if (availableDates.length === 0) throw new Error("No valid dates found.");
+
+    // Process Weekly Dates
+    // Sort descending
+    const rawWeeks = Array.from(weeklySet).sort().reverse();
+    
+    // Determine current week (based on today) to exclude it if it's incomplete
+    // Or simpler: Exclude the very latest week found in data if we assume data is up to today
+    // Requirement: "only include full week except latest week"
+    // We will simply drop index 0 from the sorted weeks.
+    if (rawWeeks.length > 1) {
+        availableWeeks = rawWeeks.slice(1); // Skip latest
+    } else {
+        availableWeeks = []; // Not enough data for full weeks
     }
 
-    populateFilterOptions();
+    populateFilterOptions('trend');
+    populateFilterOptions('weekly');
 
     const latestDate = availableDates[0];
     filters.date = latestDate;
@@ -164,6 +224,72 @@ function processAggregatedData(rows, headers) {
 
     updateTableForDate(latestDate);
 }
+
+// --- Filters Logic ---
+
+function populateFilterOptions(viewType) {
+    const categories = new Set();
+    const sourceData = viewType === 'weekly' ? allWeeklyData : allCategoryData;
+    const fullCategories = Object.keys(sourceData);
+
+    fullCategories.forEach(fullCat => {
+        const parts = fullCat.split('::');
+        if (parts.length > 0) categories.add(parts[0].trim());
+    });
+    
+    const selectId = viewType === 'weekly' ? 'weekly-category-filter' : 'trend-category-filter';
+    const catSelect = document.getElementById(selectId);
+    while (catSelect.options.length > 1) catSelect.remove(1);
+    
+    Array.from(categories).sort().forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.textContent = cat;
+        catSelect.appendChild(option);
+    });
+    updateSubcategoryOptions(viewType); 
+}
+
+function updateSubcategoryOptions(viewType) {
+    const selectId = viewType === 'weekly' ? 'weekly-subcategory-filter' : 'trend-subcategory-filter';
+    const subSelect = document.getElementById(selectId);
+    
+    const currentCatFilter = viewType === 'weekly' ? filters.weeklyCategory : filters.trendCategory;
+    const currentSubFilter = viewType === 'weekly' ? filters.weeklySubcategory : filters.trendSubcategory;
+
+    subSelect.innerHTML = '<option value="all">All Sub-categories</option>';
+    const relevantSubcats = new Set();
+
+    const sourceData = viewType === 'weekly' ? allWeeklyData : allCategoryData;
+
+    Object.keys(sourceData).forEach(fullCat => {
+        const parts = fullCat.split('::');
+        const mainCat = parts[0].trim();
+        
+        if (currentCatFilter !== 'all' && mainCat !== currentCatFilter) return;
+        if (parts.length > 1) relevantSubcats.add(parts[1].trim());
+    });
+
+    Array.from(relevantSubcats).sort().forEach(sub => {
+        const option = document.createElement('option');
+        option.value = sub;
+        option.textContent = sub;
+        subSelect.appendChild(option);
+    });
+
+    // Restore selection
+    let exists = false;
+    for(let i=0; i<subSelect.options.length; i++){
+        if(subSelect.options[i].value === currentSubFilter) exists = true;
+    }
+    if(exists) {
+        subSelect.value = currentSubFilter;
+    } else {
+        if (viewType === 'weekly') filters.weeklySubcategory = 'all';
+        else filters.trendSubcategory = 'all';
+    }
+}
+
 
 // --- Core Calculation Logic ---
 function getMetricsForDate(category, dateStr) {
@@ -309,14 +435,13 @@ function renderAnomalyFeed() {
     if (availableDates.length === 0) return;
 
     const dates = availableDates.slice(0, historyWindow); 
-    const allAnomalies = []; // Flat list of all high anomalies
+    const allAnomalies = []; 
 
     const categories = Object.keys(allCategoryData);
 
     categories.forEach(cat => {
         dates.forEach((date) => {
             const metrics = getMetricsForDate(cat, date);
-            // STRICT FILTER: Only keep rows where anomalyType is 'high'
             if (metrics.anomalyType === 'high') {
                 allAnomalies.push(metrics);
             }
@@ -328,20 +453,18 @@ function renderAnomalyFeed() {
         return;
     }
 
-    // Sort: Date Descending (Newest First) -> then Severity (Delta) Descending
     allAnomalies.sort((a, b) => {
         const dateA = new Date(a.date);
         const dateB = new Date(b.date);
         if (dateB.getTime() !== dateA.getTime()) {
-            return dateB - dateA; // Newest date first
+            return dateB - dateA; 
         }
-        return b.delta - a.delta; // Highest delta first
+        return b.delta - a.delta; 
     });
 
-    // Render
     let htmlBuffer = '';
     allAnomalies.forEach(metrics => {
-        let deltaClass = 'delta-positive'; // Always positive for high anomalies usually
+        let deltaClass = 'delta-positive';
         let deltaSign = metrics.delta > 0 ? '+' : '';
         
         htmlBuffer += `
@@ -359,59 +482,7 @@ function renderAnomalyFeed() {
     tbody.innerHTML = htmlBuffer;
 }
 
-// --- Page 2: Trend Logic ---
-
-function populateFilterOptions() {
-    const categories = new Set();
-    const fullCategories = Object.keys(allCategoryData);
-    fullCategories.forEach(fullCat => {
-        const parts = fullCat.split('::');
-        if (parts.length > 0) categories.add(parts[0].trim());
-    });
-    
-    const catSelect = document.getElementById('trend-category-filter');
-    while (catSelect.options.length > 1) catSelect.remove(1);
-    
-    Array.from(categories).sort().forEach(cat => {
-        const option = document.createElement('option');
-        option.value = cat;
-        option.textContent = cat;
-        catSelect.appendChild(option);
-    });
-    updateSubcategoryOptions(); 
-}
-
-function updateSubcategoryOptions() {
-    const subSelect = document.getElementById('trend-subcategory-filter');
-    const currentCatFilter = filters.trendCategory;
-    const currentSubFilter = filters.trendSubcategory;
-
-    subSelect.innerHTML = '<option value="all">All Sub-categories</option>';
-    const relevantSubcats = new Set();
-
-    Object.keys(allCategoryData).forEach(fullCat => {
-        const parts = fullCat.split('::');
-        const mainCat = parts[0].trim();
-        
-        if (currentCatFilter !== 'all' && mainCat !== currentCatFilter) return;
-        if (parts.length > 1) relevantSubcats.add(parts[1].trim());
-    });
-
-    Array.from(relevantSubcats).sort().forEach(sub => {
-        const option = document.createElement('option');
-        option.value = sub;
-        option.textContent = sub;
-        subSelect.appendChild(option);
-    });
-
-    // Restore selection
-    let exists = false;
-    for(let i=0; i<subSelect.options.length; i++){
-        if(subSelect.options[i].value === currentSubFilter) exists = true;
-    }
-    if(exists) subSelect.value = currentSubFilter;
-    else filters.trendSubcategory = 'all';
-}
+// --- Page 2: Daily Trend Logic ---
 
 function renderTrendTable() {
     const tbody = document.getElementById('trend-table-body');
@@ -468,6 +539,76 @@ function renderTrendTable() {
             trendDates.forEach(date => {
                 const count = dateMap[date] || 0;
                 const isHead = date === recentDate;
+                const cellStyle = isHead ? 'font-weight:bold; color:#f1f5f9; background-color: rgba(59, 130, 246, 0.1);' : '';
+                dateCells += `<td class="trend-val" style="${cellStyle}">${count}</td>`;
+            });
+
+            rowsHTML += `<tr><td class="category-cell">${escapeHtml(category)}</td><td>${changeHTML}</td>${dateCells}</tr>`;
+        });
+    }
+    tbody.innerHTML = rowsHTML;
+}
+
+// --- Page 3: Weekly Trend Logic (New) ---
+
+function renderWeeklyTable() {
+    const tbody = document.getElementById('weekly-table-body');
+    const thead = document.getElementById('weekly-header-row');
+    
+    if (availableWeeks.length < 2) {
+        tbody.innerHTML = '<tr><td colspan="100" class="text-center" style="padding: 2rem; color: #94a3b8;">Not enough weekly data (need at least 2 full weeks)</td></tr>';
+        return;
+    }
+
+    // Show last 12 full weeks max
+    const trendWeeks = availableWeeks.slice(0, 12);
+    let headerHTML = '<th class="category-cell">Category</th><th class="text-center">% Changes</th>';
+    trendWeeks.forEach(week => headerHTML += `<th class="trend-date-header">${week}</th>`);
+    thead.innerHTML = headerHTML;
+
+    const recentWeek = trendWeeks[0]; 
+    const prevWeek = trendWeeks[1];   
+
+    // Reusing filter logic structure but for weekly data
+    const visibleCategories = Object.keys(allWeeklyData)
+        .filter(cat => {
+            const parts = cat.split('::');
+            const main = parts[0].trim();
+            const sub = parts.length > 1 ? parts[1].trim() : '';
+            if (filters.weeklyCategory !== 'all' && main !== filters.weeklyCategory) return false;
+            if (filters.weeklySubcategory !== 'all' && sub !== filters.weeklySubcategory) return false;
+            return true;
+        })
+        // Sort by most recent week volume
+        .sort((a, b) => (allWeeklyData[b][recentWeek] || 0) - (allWeeklyData[a][recentWeek] || 0));
+
+    let rowsHTML = '';
+    if (visibleCategories.length === 0) {
+        rowsHTML = '<tr><td colspan="100" class="text-center" style="padding: 2rem; color: #64748b;">No data matches filters</td></tr>';
+    } else {
+        visibleCategories.forEach(category => {
+            const weekMap = allWeeklyData[category];
+            const recentCount = weekMap[recentWeek] || 0;
+            const prevCount = (prevWeek && weekMap[prevWeek]) ? weekMap[prevWeek] : 0;
+            
+            let changeHTML = '<span class="change-neutral">-</span>';
+            let percent = 0;
+
+            if (prevCount > 0) {
+                percent = Math.round(((recentCount - prevCount) / prevCount) * 100);
+                if (percent > 0) changeHTML = `<span class="change-positive">🔴 ↑ ${percent}%</span>`;
+                else if (percent < 0) changeHTML = `<span class="change-negative">🟢 ↓ ${Math.abs(percent)}%</span>`;
+                else changeHTML = `<span class="change-neutral">0%</span>`;
+            } else if (recentCount > 0) {
+                 changeHTML = `<span class="change-positive">🔴 New</span>`;
+            } else {
+                 changeHTML = `<span class="change-neutral">0%</span>`;
+            }
+
+            let dateCells = '';
+            trendWeeks.forEach(week => {
+                const count = weekMap[week] || 0;
+                const isHead = week === recentWeek;
                 const cellStyle = isHead ? 'font-weight:bold; color:#f1f5f9; background-color: rgba(59, 130, 246, 0.1);' : '';
                 dateCells += `<td class="trend-val" style="${cellStyle}">${count}</td>`;
             });
