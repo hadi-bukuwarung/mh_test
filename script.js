@@ -155,7 +155,7 @@ function processAggregatedData(rows, headers) {
         slider.max = maxScroll;
         slider.disabled = false;
         // Set slider to Right (Latest) by default
-        slider.value = maxScroll;
+        slider.value = 0; // Slider 0 = NEWEST (Reverted Logic)
     } else {
         slider.max = 0;
         slider.value = 0;
@@ -332,24 +332,18 @@ function renderTrendTable() {
 
     const windowSize = 14;
     
-    // Slider Logic (Inverted):
-    // slider.value = 0 (Left) => Show Oldest Dates
-    // slider.value = Max (Right) => Show Newest Dates
-    // availableDates is sorted [Newest ... Oldest]
-    // We want startIndex (index in availableDates) to be 0 when slider is Max.
+    // Standard Slider Logic:
+    // slider.value = 0 (Left) => Start from 0 (Newest Data)
+    // slider.value = Max (Right) => Start from Max (Oldest Data)
     
-    const maxSliderVal = parseInt(slider.max, 10);
-    const currentSliderVal = parseInt(slider.value, 10);
-    
-    // If slider is at Max (Right), startIndex = 0 (Newest)
-    // If slider is at 0 (Left), startIndex = maxSliderVal (Oldest possible start)
-    const startIndex = maxSliderVal - currentSliderVal;
+    const startIndex = parseInt(slider.value, 10);
     const endIndex = startIndex + windowSize;
     
-    // Slice the array. Order remains Descending (Newest -> Oldest) for columns
+    // availableDates is sorted [Newest ... Oldest]
+    // So slice(0, 14) is the 14 newest days.
     const trendDates = availableDates.slice(startIndex, endIndex);
     
-    // Update Label: Show Newest (Left Column) -> Oldest (Right Column)
+    // Update Label
     if (trendDates.length > 0) {
         const newest = trendDates[0];
         const oldest = trendDates[trendDates.length - 1];
@@ -401,7 +395,6 @@ function renderTrendTable() {
         let dateCells = '';
         trendDates.forEach(date => {
             const count = dateMap[date] || 0;
-            // Highlight the "Most Recent" column in the current window
             const isHead = date === recentDate;
             const cellStyle = isHead ? 'font-weight:bold; color:#f1f5f9; background-color: rgba(59, 130, 246, 0.1);' : '';
             dateCells += `<td class="trend-val" style="${cellStyle}">${count}</td>`;
