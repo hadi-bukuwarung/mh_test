@@ -51,6 +51,20 @@
                         <option value="normal">Normal</option>
                     </select>
                 </div>
+                
+                <div class="filter-group">
+                    <label for="category-filter">Category:</label>
+                    <select id="category-filter">
+                        <option value="all">All Categories</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="subcategory-filter">Sub-category:</label>
+                    <select id="subcategory-filter">
+                        <option value="all">All Sub-categories</option>
+                    </select>
+                </div>
             </div>
 
             <div class="table-container">
@@ -81,7 +95,24 @@
 
         <!-- Page 2: Daily Trend View -->
         <div id="view-trends" class="view-section" style="display: none;">
-            <!-- Slider Removed -->
+            
+            <!-- Filters specific to Trend View -->
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="trend-category-filter">Trend Category:</label>
+                    <select id="trend-category-filter">
+                        <option value="all">All Categories</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="trend-subcategory-filter">Trend Sub-category:</label>
+                    <select id="trend-subcategory-filter">
+                        <option value="all">All Sub-categories</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="table-container trend-container">
                 <table id="trend-table">
                     <thead>
