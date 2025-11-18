@@ -225,8 +225,9 @@ function updateSubcategoryOptions() {
         }
 
         if (parts.length > 1) {
-            // STRIP PREFIX: Join everything after index 1
-            const subCatName = parts.slice(1).join('::').trim();
+            // Sub-category is text BETWEEN first and second ::
+            // e.g. Complaint::EDC::Issue -> EDC
+            const subCatName = parts[1].trim();
             relevantSubcats.add(subCatName);
         }
     });
@@ -266,8 +267,8 @@ function isTrendRowVisible(fullCategory) {
     const parts = fullCategory.split('::');
     const mainCat = parts[0].trim();
     
-    // Subcategory is suffix
-    const subCat = parts.length > 1 ? parts.slice(1).join('::').trim() : '';
+    // Subcategory is the second part
+    const subCat = parts.length > 1 ? parts[1].trim() : '';
 
     if (filters.trendCategory !== 'all' && mainCat !== filters.trendCategory) return false;
     if (filters.trendSubcategory !== 'all' && subCat !== filters.trendSubcategory) return false;
