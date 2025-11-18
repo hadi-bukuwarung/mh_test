@@ -1,9 +1,11 @@
 // Global state
 let allCategoryData = {}; // Map: Category -> Date -> Count
+let allChannelData = {}; // Map: Channel -> Date -> Count (New)
 let allDatesSet = new Set();
 let availableDates = []; // Sorted descending (Index 0 = Newest)
 let allWeeklyData = {}; // Map: Category -> WeekStr -> Count
 let availableWeeks = []; // Sorted descending (YYYY-MM-DD of Monday)
+let allStatusData = {}; // Map: Date -> { Open: count, Pending: count, Closed: count } (New)
 let currentDate = null;
 let tableData = [];
 let sortConfig = { key: 'today_count', direction: 'desc' };
@@ -71,6 +73,7 @@ function setupEventListeners() {
     document.getElementById('tab-dashboard').addEventListener('click', () => switchTab('dashboard'));
     document.getElementById('tab-trends').addEventListener('click', () => switchTab('trends'));
     document.getElementById('tab-weekly').addEventListener('click', () => switchTab('weekly'));
+    document.getElementById('tab-channel').addEventListener('click', () => switchTab('channel'));
     document.getElementById('tab-feed').addEventListener('click', () => switchTab('feed'));
 }
 
@@ -78,7 +81,7 @@ function switchTab(tabName) {
     document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById(`tab-${tabName}`).classList.add('active');
 
-    const views = ['view-dashboard', 'view-trends', 'view-weekly', 'view-feed'];
+    const views = ['view-dashboard', 'view-trends', 'view-weekly', 'view-channel', 'view-feed'];
     views.forEach(id => document.getElementById(id).style.display = 'none');
 
     if (tabName === 'dashboard') {
@@ -90,6 +93,9 @@ function switchTab(tabName) {
     } else if (tabName === 'weekly') {
         document.getElementById('view-weekly').style.display = 'block';
         if (availableWeeks.length > 0) renderWeeklyTable();
+    } else if (tabName === 'channel') {
+        document.getElementById('view-channel').style.display = 'block';
+        if (availableDates.length > 0) renderChannelTable();
     } else if (tabName === 'feed') {
         document.getElementById('view-feed').style.display = 'block';
         if (availableDates.length > 0) renderAnomalyFeed();
@@ -128,12 +134,16 @@ function processAggregatedData(rows, headers) {
     const catCol = findHeader('real_category');
     const dateCol = findHeader('date');
     const countCol = findHeader('num_of_ticket');
+    const channelCol = findHeader('channel'); // New
+    const statusCol = findHeader('status');   // New
 
     if (!rows[0].hasOwnProperty(catCol) || !rows[0].hasOwnProperty(dateCol)) {
         throw new Error(`Missing required columns. Found: ${headers.join(', ')}. Expected 'real_category' and 'date'.`);
     }
 
     allCategoryData = {};
+    allChannelData = {};
+    allStatusData = {};
     allDatesSet = new Set();
     allWeeklyData = {};
     let weeklySet = new Set();
@@ -156,6 +166,8 @@ function processAggregatedData(rows, headers) {
         const row = rows[i];
         const category = row[catCol];
         const dateStr = row[dateCol];
+        const channel = row[channelCol] || 'Unknown'; // Get Channel
+        const status = row[statusCol] || 'Open';      // Get Status
         let count = 1;
 
         if (countCol && row[countCol]) {
@@ -169,10 +181,31 @@ function processAggregatedData(rows, headers) {
         if (trimmedDate.length < 10) continue;
 
         allDatesSet.add(trimmedDate);
+        
+        // 1. Category Data (Daily)
         if (!allCategoryData[category]) allCategoryData[category] = {};
         if (!allCategoryData[category][trimmedDate]) allCategoryData[category][trimmedDate] = 0;
         allCategoryData[category][trimmedDate] += count;
 
+        // 2. Channel Data (Daily)
+        if (!allChannelData[channel]) allChannelData[channel] = {};
+        if (!allChannelData[channel][trimmedDate]) allChannelData[channel][trimmedDate] = 0;
+        allChannelData[channel][trimmedDate] += count;
+
+        // 3. Status Data (Daily)
+        if (!allStatusData[trimmedDate]) allStatusData[trimmedDate] = { total: 0, open: 0, pending: 0, closed: 0 };
+        allStatusData[trimmedDate].total += count;
+        
+        const statusLower = status.toLowerCase();
+        if (statusLower.includes('closed')) {
+            allStatusData[trimmedDate].closed += count;
+        } else if (statusLower.includes('pending') || statusLower.includes('hold')) {
+            allStatusData[trimmedDate].pending += count;
+        } else {
+            allStatusData[trimmedDate].open += count;
+        }
+
+        // 4. Weekly Data (Category)
         const [y, m, d] = trimmedDate.split('-').map(Number);
         const dateObj = new Date(y, m - 1, d);
         const mondayObj = getMonday(dateObj);
@@ -187,7 +220,6 @@ function processAggregatedData(rows, headers) {
     availableDates = Array.from(allDatesSet).sort().reverse(); 
     if (availableDates.length === 0) throw new Error("No valid dates found.");
 
-    // Include ALL weeks (including latest incomplete week)
     availableWeeks = Array.from(weeklySet).sort().reverse();
 
     populateFilterOptions('trend');
@@ -204,10 +236,31 @@ function processAggregatedData(rows, headers) {
         document.getElementById('current-date').textContent = latestDate;
     }
 
+    // Update Status Scorecard
+    updateStatusScorecard(latestDate);
+
     document.getElementById('loading').style.display = 'none';
     document.getElementById('view-dashboard').style.display = 'block';
 
     updateTableForDate(latestDate);
+}
+
+function updateStatusScorecard(dateStr) {
+    const stats = allStatusData[dateStr] || { total: 0, open: 0, pending: 0, closed: 0 };
+    
+    const getPercent = (val) => {
+        if (stats.total === 0) return '0%';
+        return Math.round((val / stats.total) * 100) + '%';
+    };
+
+    document.getElementById('health-open').textContent = getPercent(stats.open);
+    document.getElementById('health-pending').textContent = getPercent(stats.pending);
+    document.getElementById('health-closed').textContent = getPercent(stats.closed);
+    
+    // Set Colors based on simplistic logic
+    document.getElementById('health-open').style.color = stats.open > 0 ? '#fca5a5' : '#f1f5f9';
+    document.getElementById('health-closed').style.color = '#4ade80'; // Green for closed
+    document.getElementById('health-pending').style.color = '#fde047'; // Yellow for pending
 }
 
 // --- Filters Logic ---
@@ -533,7 +586,7 @@ function renderTrendTable() {
     tbody.innerHTML = rowsHTML;
 }
 
-// --- Page 3: Weekly Trend Logic (New) ---
+// --- Page 3: Weekly Trend Logic ---
 
 function renderWeeklyTable() {
     const tbody = document.getElementById('weekly-table-body');
@@ -544,11 +597,10 @@ function renderWeeklyTable() {
         return;
     }
 
-    // Show last 12 weeks (including the latest partial week)
+    // Show last 12 weeks including latest
     const trendWeeks = availableWeeks.slice(0, 12);
     let headerHTML = '<th class="category-cell">Category</th><th class="text-center">% Changes</th>';
     trendWeeks.forEach((week, index) => {
-        // Mark latest week if it might be partial (index 0)
         const label = index === 0 ? `${week} (Latest)` : week;
         headerHTML += `<th class="trend-date-header">${label}</th>`;
     });
@@ -594,7 +646,7 @@ function renderWeeklyTable() {
             let dateCells = '';
             trendWeeks.forEach((week, index) => {
                 const count = weekMap[week] || 0;
-                const isHead = index === 0; // Highlight latest week
+                const isHead = index === 0; 
                 const cellStyle = isHead ? 'font-weight:bold; color:#f1f5f9; background-color: rgba(59, 130, 246, 0.1);' : '';
                 dateCells += `<td class="trend-val" style="${cellStyle}">${count}</td>`;
             });
@@ -602,6 +654,62 @@ function renderWeeklyTable() {
             rowsHTML += `<tr><td class="category-cell">${escapeHtml(category)}</td><td>${changeHTML}</td>${dateCells}</tr>`;
         });
     }
+    tbody.innerHTML = rowsHTML;
+}
+
+// --- Page 4: Channel Trend Logic (New) ---
+
+function renderChannelTable() {
+    const tbody = document.getElementById('channel-table-body');
+    const thead = document.getElementById('channel-header-row');
+    
+    if (availableDates.length < 2) {
+        tbody.innerHTML = '<tr><td colspan="100" class="text-center" style="padding: 2rem; color: #94a3b8;">Not enough data</td></tr>';
+        return;
+    }
+
+    const trendDates = availableDates.slice(0, 14);
+    let headerHTML = '<th class="category-cell">Channel</th><th class="text-center">% Changes</th>';
+    trendDates.forEach(date => headerHTML += `<th class="trend-date-header">${date}</th>`);
+    thead.innerHTML = headerHTML;
+
+    const recentDate = trendDates[0]; 
+    const prevDate = trendDates[1];   
+
+    // Sort channels by volume on recent date
+    const channels = Object.keys(allChannelData).sort((a, b) => (allChannelData[b][recentDate] || 0) - (allChannelData[a][recentDate] || 0));
+
+    let rowsHTML = '';
+    channels.forEach(channel => {
+        const dateMap = allChannelData[channel];
+        const recentCount = dateMap[recentDate] || 0;
+        const prevCount = (prevDate && dateMap[prevDate]) ? dateMap[prevDate] : 0;
+        
+        let changeHTML = '<span class="change-neutral">-</span>';
+        let percent = 0;
+
+        if (prevCount > 0) {
+            percent = Math.round(((recentCount - prevCount) / prevCount) * 100);
+            if (percent > 0) changeHTML = `<span class="change-positive">🔴 ↑ ${percent}%</span>`;
+            else if (percent < 0) changeHTML = `<span class="change-negative">🟢 ↓ ${Math.abs(percent)}%</span>`;
+            else changeHTML = `<span class="change-neutral">0%</span>`;
+        } else if (recentCount > 0) {
+             changeHTML = `<span class="change-positive">🔴 New</span>`;
+        } else {
+             changeHTML = `<span class="change-neutral">0%</span>`;
+        }
+
+        let dateCells = '';
+        trendDates.forEach(date => {
+            const count = dateMap[date] || 0;
+            const isHead = date === recentDate;
+            const cellStyle = isHead ? 'font-weight:bold; color:#f1f5f9; background-color: rgba(59, 130, 246, 0.1);' : '';
+            dateCells += `<td class="trend-val" style="${cellStyle}">${count}</td>`;
+        });
+
+        rowsHTML += `<tr><td class="category-cell">${escapeHtml(channel)}</td><td>${changeHTML}</td>${dateCells}</tr>`;
+    });
+
     tbody.innerHTML = rowsHTML;
 }
 
