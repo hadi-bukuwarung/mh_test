@@ -33,6 +33,23 @@
         </div>
 
         <div id="content" style="display: none;">
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="date-filter">Date:</label>
+                    <select id="date-filter">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="status-filter">Anomaly Status:</label>
+                    <select id="status-filter">
+                        <option value="all">All</option>
+                        <option value="anomaly">High Anomaly Only</option>
+                        <option value="normal">Normal Only</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-label">Total Categories</div>
@@ -53,7 +70,7 @@
                     <thead>
                         <tr>
                             <th data-sort="category">Category <span class="sort-arrow"></span></th>
-                            <th data-sort="today_count" class="text-right">Today <span class="sort-arrow"></span></th>
+                            <th data-sort="today_count" class="text-right"><span id="date-column-header">Date</span> <span class="sort-arrow"></span></th>
                             <th data-sort="baseline" class="text-right">Baseline (21d) <span class="sort-arrow"></span></th>
                             <th data-sort="delta" class="text-right">Delta <span class="sort-arrow"></span></th>
                             <th>Status</th>
