@@ -138,11 +138,10 @@ function processAggregatedData(rows, headers) {
     allWeeklyData = {};
     let weeklySet = new Set();
 
-    // Helper to get Monday of the week
     const getMonday = (d) => {
         const date = new Date(d);
         const day = date.getDay();
-        const diff = date.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+        const diff = date.getDate() - day + (day === 0 ? -6 : 1); 
         return new Date(date.setDate(diff));
     };
 
@@ -169,13 +168,11 @@ function processAggregatedData(rows, headers) {
         const trimmedDate = dateStr.trim();
         if (trimmedDate.length < 10) continue;
 
-        // Daily Data
         allDatesSet.add(trimmedDate);
         if (!allCategoryData[category]) allCategoryData[category] = {};
         if (!allCategoryData[category][trimmedDate]) allCategoryData[category][trimmedDate] = 0;
         allCategoryData[category][trimmedDate] += count;
 
-        // Weekly Data
         const [y, m, d] = trimmedDate.split('-').map(Number);
         const dateObj = new Date(y, m - 1, d);
         const mondayObj = getMonday(dateObj);
@@ -187,23 +184,11 @@ function processAggregatedData(rows, headers) {
         allWeeklyData[category][weekStr] += count;
     }
 
-    // Process Daily Dates
     availableDates = Array.from(allDatesSet).sort().reverse(); 
     if (availableDates.length === 0) throw new Error("No valid dates found.");
 
-    // Process Weekly Dates
-    // Sort descending
-    const rawWeeks = Array.from(weeklySet).sort().reverse();
-    
-    // Determine current week (based on today) to exclude it if it's incomplete
-    // Or simpler: Exclude the very latest week found in data if we assume data is up to today
-    // Requirement: "only include full week except latest week"
-    // We will simply drop index 0 from the sorted weeks.
-    if (rawWeeks.length > 1) {
-        availableWeeks = rawWeeks.slice(1); // Skip latest
-    } else {
-        availableWeeks = []; // Not enough data for full weeks
-    }
+    // Include ALL weeks (including latest incomplete week)
+    availableWeeks = Array.from(weeklySet).sort().reverse();
 
     populateFilterOptions('trend');
     populateFilterOptions('weekly');
@@ -277,7 +262,6 @@ function updateSubcategoryOptions(viewType) {
         subSelect.appendChild(option);
     });
 
-    // Restore selection
     let exists = false;
     for(let i=0; i<subSelect.options.length; i++){
         if(subSelect.options[i].value === currentSubFilter) exists = true;
@@ -555,21 +539,24 @@ function renderWeeklyTable() {
     const tbody = document.getElementById('weekly-table-body');
     const thead = document.getElementById('weekly-header-row');
     
-    if (availableWeeks.length < 2) {
-        tbody.innerHTML = '<tr><td colspan="100" class="text-center" style="padding: 2rem; color: #94a3b8;">Not enough weekly data (need at least 2 full weeks)</td></tr>';
+    if (availableWeeks.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="100" class="text-center" style="padding: 2rem; color: #94a3b8;">Not enough weekly data</td></tr>';
         return;
     }
 
-    // Show last 12 full weeks max
+    // Show last 12 weeks (including the latest partial week)
     const trendWeeks = availableWeeks.slice(0, 12);
     let headerHTML = '<th class="category-cell">Category</th><th class="text-center">% Changes</th>';
-    trendWeeks.forEach(week => headerHTML += `<th class="trend-date-header">${week}</th>`);
+    trendWeeks.forEach((week, index) => {
+        // Mark latest week if it might be partial (index 0)
+        const label = index === 0 ? `${week} (Latest)` : week;
+        headerHTML += `<th class="trend-date-header">${label}</th>`;
+    });
     thead.innerHTML = headerHTML;
 
     const recentWeek = trendWeeks[0]; 
     const prevWeek = trendWeeks[1];   
 
-    // Reusing filter logic structure but for weekly data
     const visibleCategories = Object.keys(allWeeklyData)
         .filter(cat => {
             const parts = cat.split('::');
@@ -579,7 +566,6 @@ function renderWeeklyTable() {
             if (filters.weeklySubcategory !== 'all' && sub !== filters.weeklySubcategory) return false;
             return true;
         })
-        // Sort by most recent week volume
         .sort((a, b) => (allWeeklyData[b][recentWeek] || 0) - (allWeeklyData[a][recentWeek] || 0));
 
     let rowsHTML = '';
@@ -606,9 +592,9 @@ function renderWeeklyTable() {
             }
 
             let dateCells = '';
-            trendWeeks.forEach(week => {
+            trendWeeks.forEach((week, index) => {
                 const count = weekMap[week] || 0;
-                const isHead = week === recentWeek;
+                const isHead = index === 0; // Highlight latest week
                 const cellStyle = isHead ? 'font-weight:bold; color:#f1f5f9; background-color: rgba(59, 130, 246, 0.1);' : '';
                 dateCells += `<td class="trend-val" style="${cellStyle}">${count}</td>`;
             });
