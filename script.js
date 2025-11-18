@@ -31,11 +31,6 @@ function setupEventListeners() {
         renderTable();
     });
 
-    // Slider Event
-    document.getElementById('trend-slider').addEventListener('input', function() {
-        renderTrendTable();
-    });
-
     // Tabs
     document.getElementById('tab-dashboard').addEventListener('click', () => switchTab('dashboard'));
     document.getElementById('tab-trends').addEventListener('click', () => switchTab('trends'));
@@ -143,24 +138,6 @@ function processAggregatedData(rows, headers) {
     // Initialize Dashboard
     const latestDate = availableDates[0];
     filters.date = latestDate;
-    
-    // Update Slider Max
-    const slider = document.getElementById('trend-slider');
-    const windowSize = 14;
-    
-    // Calculate max scroll position
-    const maxScroll = Math.max(0, availableDates.length - windowSize);
-    
-    if (maxScroll > 0) {
-        slider.max = maxScroll;
-        slider.disabled = false;
-        // Set slider to Right (Latest) by default
-        slider.value = 0; // Slider 0 = NEWEST (Reverted Logic)
-    } else {
-        slider.max = 0;
-        slider.value = 0;
-        slider.disabled = true;
-    }
     
     // Display Date safely
     try {
@@ -322,34 +299,15 @@ function renderTable() {
 function renderTrendTable() {
     const tbody = document.getElementById('trend-table-body');
     const thead = document.getElementById('trend-header-row');
-    const slider = document.getElementById('trend-slider');
-    const labelRange = document.getElementById('slider-date-range');
     
     if (availableDates.length < 2) {
         tbody.innerHTML = '<tr><td colspan="100" class="text-center" style="padding: 2rem; color: #94a3b8;">Not enough data for trend analysis</td></tr>';
         return;
     }
 
-    const windowSize = 14;
+    // Fixed 14-day window, starting from newest
+    const trendDates = availableDates.slice(0, 14);
     
-    // Standard Slider Logic:
-    // slider.value = 0 (Left) => Start from 0 (Newest Data)
-    // slider.value = Max (Right) => Start from Max (Oldest Data)
-    
-    const startIndex = parseInt(slider.value, 10);
-    const endIndex = startIndex + windowSize;
-    
-    // availableDates is sorted [Newest ... Oldest]
-    // So slice(0, 14) is the 14 newest days.
-    const trendDates = availableDates.slice(startIndex, endIndex);
-    
-    // Update Label
-    if (trendDates.length > 0) {
-        const newest = trendDates[0];
-        const oldest = trendDates[trendDates.length - 1];
-        labelRange.textContent = `${newest} (Left) — ${oldest} (Right)`;
-    }
-
     // Build Header
     let headerHTML = '<th class="category-cell">Category</th><th class="text-center">% Changes</th>';
     trendDates.forEach(date => {
@@ -358,15 +316,18 @@ function renderTrendTable() {
     });
     thead.innerHTML = headerHTML;
 
-    const categories = Object.keys(allCategoryData).sort();
+    // Sort categories by Recent Date Count (Descending)
+    const recentDate = trendDates[0]; // Newest date
+    const prevDate = trendDates[1];   // Previous day for % change
+
+    const categories = Object.keys(allCategoryData).sort((a, b) => {
+        const countA = allCategoryData[a][recentDate] || 0;
+        const countB = allCategoryData[b][recentDate] || 0;
+        return countB - countA; // Descending sort
+    });
+
     let rowsHTML = '';
     
-    // % Change Calculation:
-    // Compare "Newest Visible Date" (trendDates[0]) 
-    // vs "Previous Day" (availableDates[startIndex + 1])
-    const recentDate = availableDates[startIndex];
-    const prevDate = availableDates[startIndex + 1];
-
     categories.forEach(category => {
         const dateMap = allCategoryData[category];
         
