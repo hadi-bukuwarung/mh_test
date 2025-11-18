@@ -13,6 +13,12 @@
             <p id="current-date"></p>
         </div>
 
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button id="tab-dashboard" class="nav-btn active">Today vs Baseline</button>
+            <button id="tab-trends" class="nav-btn">Daily Trend</button>
+        </div>
+
         <div id="loading" class="loading">
             <div class="spinner"></div>
             <p>Loading ticket data...</p>
@@ -32,10 +38,9 @@
             </div>
         </div>
 
-        <div id="content" style="display: none;">
+        <!-- Page 1: Dashboard View -->
+        <div id="view-dashboard" class="view-section">
             <div class="filters">
-                <!-- Date Filter Removed -->
-                
                 <div class="filter-group">
                     <label for="status-filter">Status:</label>
                     <select id="status-filter">
@@ -73,6 +78,23 @@
                 </ul>
             </div>
         </div>
+
+        <!-- Page 2: Daily Trend View -->
+        <div id="view-trends" class="view-section" style="display: none;">
+            <div class="table-container trend-container">
+                <table id="trend-table">
+                    <thead>
+                        <tr id="trend-header-row">
+                            <!-- JS will populate headers -->
+                        </tr>
+                    </thead>
+                    <tbody id="trend-table-body">
+                        <!-- JS will populate rows -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
