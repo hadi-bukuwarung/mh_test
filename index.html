@@ -34,34 +34,17 @@
 
         <div id="content" style="display: none;">
             <div class="filters">
+                <!-- Date Filter Removed -->
+                
                 <div class="filter-group">
-                    <label for="date-filter">Date:</label>
-                    <select id="date-filter">
-                        <option value="">Loading...</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="status-filter">Anomaly Status:</label>
+                    <label for="status-filter">Status:</label>
                     <select id="status-filter">
-                        <option value="all">All</option>
-                        <option value="anomaly">High Anomaly Only</option>
-                        <option value="normal">Normal Only</option>
+                        <option value="all">All Statuses</option>
+                        <option value="anomaly">Anomalies Only</option>
+                        <option value="high">High Anomalies</option>
+                        <option value="low">Low Anomalies</option>
+                        <option value="normal">Normal</option>
                     </select>
-                </div>
-            </div>
-
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-label">Total Categories</div>
-                    <div class="stat-value" id="total-categories">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Anomalies Detected</div>
-                    <div class="stat-value anomaly" id="anomaly-count">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Anomaly Rate</div>
-                    <div class="stat-value warning" id="anomaly-rate">0%</div>
                 </div>
             </div>
 
@@ -70,7 +53,7 @@
                     <thead>
                         <tr>
                             <th data-sort="category">Category <span class="sort-arrow"></span></th>
-                            <th data-sort="today_count" class="text-right"><span id="date-column-header">Date</span> <span class="sort-arrow"></span></th>
+                            <th data-sort="today_count" class="text-right"><span id="date-column-header">Count</span> <span class="sort-arrow"></span></th>
                             <th data-sort="baseline" class="text-right">Baseline (21d) <span class="sort-arrow"></span></th>
                             <th data-sort="delta" class="text-right">Delta <span class="sort-arrow"></span></th>
                             <th>Status</th>
