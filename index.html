@@ -21,7 +21,7 @@
 
         <div id="loading" class="loading">
             <div class="spinner"></div>
-            <p>Loading ticket data...</p>
+            <p>Loading aggregated data...</p>
         </div>
 
         <div id="error" class="error-message" style="display: none;">
@@ -39,7 +39,7 @@
         </div>
 
         <!-- Page 1: Dashboard View -->
-        <div id="view-dashboard" class="view-section">
+        <div id="view-dashboard" class="view-section" style="display: none;">
             <div class="filters">
                 <div class="filter-group">
                     <label for="status-filter">Status:</label>
@@ -74,7 +74,7 @@
                 <ul>
                     <li>High Anomaly: Today's count exceeds baseline by &gt;50% OR &gt;10 tickets</li>
                     <li>Low Anomaly: Today's count is &lt;70% of baseline</li>
-                    <li>Baseline: 21-day moving average including today</li>
+                    <li>Baseline: 21-day moving average of previous days</li>
                 </ul>
             </div>
         </div>
