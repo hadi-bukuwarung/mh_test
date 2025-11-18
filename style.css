@@ -6,8 +6,8 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background-color: #f9fafb;
-    color: #111827;
+    background-color: #0f172a;
+    color: #e2e8f0;
     line-height: 1.5;
 }
 
@@ -24,12 +24,12 @@ body {
 .header h1 {
     font-size: 2rem;
     font-weight: bold;
-    color: #111827;
+    color: #f1f5f9;
     margin-bottom: 0.5rem;
 }
 
 .header p {
-    color: #6b7280;
+    color: #94a3b8;
     font-size: 1rem;
 }
 
@@ -42,8 +42,8 @@ body {
 }
 
 .spinner {
-    border: 3px solid #f3f4f6;
-    border-top: 3px solid #2563eb;
+    border: 3px solid #334155;
+    border-top: 3px solid #3b82f6;
     border-radius: 50%;
     width: 48px;
     height: 48px;
@@ -57,12 +57,12 @@ body {
 
 .loading p {
     margin-top: 1rem;
-    color: #6b7280;
+    color: #94a3b8;
 }
 
 .error-message {
-    background-color: #fef2f2;
-    border: 1px solid #fecaca;
+    background-color: #450a0a;
+    border: 1px solid #7f1d1d;
     border-radius: 0.5rem;
     padding: 1.5rem;
     max-width: 600px;
@@ -72,7 +72,7 @@ body {
 .error-content {
     display: flex;
     gap: 1rem;
-    color: #b91c1c;
+    color: #fca5a5;
 }
 
 .error-content svg {
@@ -86,7 +86,7 @@ body {
 }
 
 .error-content p {
-    color: #dc2626;
+    color: #f87171;
 }
 
 .stats-grid {
@@ -97,38 +97,40 @@ body {
 }
 
 .stat-card {
-    background: white;
+    background: #1e293b;
     border-radius: 0.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
     padding: 1.5rem;
+    border: 1px solid #334155;
 }
 
 .stat-label {
     font-size: 0.875rem;
-    color: #6b7280;
+    color: #94a3b8;
     margin-bottom: 0.5rem;
 }
 
 .stat-value {
     font-size: 2rem;
     font-weight: bold;
-    color: #111827;
+    color: #f1f5f9;
 }
 
 .stat-value.anomaly {
-    color: #dc2626;
+    color: #ef4444;
 }
 
 .stat-value.warning {
-    color: #ea580c;
+    color: #f97316;
 }
 
 .table-container {
-    background: white;
+    background: #1e293b;
     border-radius: 0.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
     overflow: hidden;
     margin-bottom: 2rem;
+    border: 1px solid #334155;
 }
 
 table {
@@ -137,7 +139,7 @@ table {
 }
 
 thead {
-    background-color: #f9fafb;
+    background-color: #0f172a;
 }
 
 th {
@@ -145,7 +147,7 @@ th {
     text-align: left;
     font-size: 0.75rem;
     font-weight: 500;
-    color: #6b7280;
+    color: #94a3b8;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     cursor: pointer;
@@ -154,7 +156,7 @@ th {
 }
 
 th:hover {
-    background-color: #f3f4f6;
+    background-color: #1e293b;
 }
 
 th.text-right {
@@ -171,19 +173,19 @@ th.sorted .sort-arrow {
 }
 
 tbody tr {
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid #334155;
 }
 
 tbody tr:hover {
-    background-color: #f9fafb;
+    background-color: #334155;
 }
 
 tbody tr.anomaly-row {
-    background-color: #fef2f2;
+    background-color: #450a0a;
 }
 
 tbody tr.anomaly-row:hover {
-    background-color: #fee2e2;
+    background-color: #7f1d1d;
 }
 
 td {
@@ -196,16 +198,16 @@ td.text-right {
 }
 
 .category-cell {
-    color: #111827;
+    color: #e2e8f0;
 }
 
 .today-cell {
     font-weight: 600;
-    color: #111827;
+    color: #f1f5f9;
 }
 
 .baseline-cell {
-    color: #6b7280;
+    color: #94a3b8;
 }
 
 .delta-cell {
@@ -213,15 +215,15 @@ td.text-right {
 }
 
 .delta-positive {
-    color: #dc2626;
+    color: #ef4444;
 }
 
 .delta-negative {
-    color: #2563eb;
+    color: #3b82f6;
 }
 
 .delta-neutral {
-    color: #6b7280;
+    color: #94a3b8;
 }
 
 .badge {
@@ -234,18 +236,18 @@ td.text-right {
 }
 
 .badge-normal {
-    color: #6b7280;
+    color: #94a3b8;
 }
 
 .badge-high {
-    background-color: #fee2e2;
-    color: #b91c1c;
+    background-color: #7f1d1d;
+    color: #fca5a5;
     font-weight: 600;
 }
 
 .badge-low {
-    background-color: #dbeafe;
-    color: #1e40af;
+    background-color: #1e3a8a;
+    color: #93c5fd;
     font-weight: 600;
 }
 
@@ -260,8 +262,8 @@ td.text-right {
 }
 
 .info-box {
-    background-color: #eff6ff;
-    border: 1px solid #bfdbfe;
+    background-color: #1e3a8a;
+    border: 1px solid #1e40af;
     border-radius: 0.5rem;
     padding: 1rem 1.5rem;
 }
@@ -269,13 +271,13 @@ td.text-right {
 .info-box h3 {
     font-size: 0.875rem;
     font-weight: 600;
-    color: #1e3a8a;
+    color: #bfdbfe;
     margin-bottom: 0.5rem;
 }
 
 .info-box ul {
     list-style: none;
-    color: #1e40af;
+    color: #93c5fd;
     font-size: 0.875rem;
 }
 
