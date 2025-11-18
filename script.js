@@ -1,10 +1,10 @@
 // Global state
-let allCategoryData = {}; // Store all date data for each category
-let allDatesSet = new Set(); // Use Set for unique dates
-let availableDates = []; // Sorted descending (Newest first)
-let availableDatesAsc = []; // Sorted ascending
-let dateIndexMap = {}; // Map dateStr -> index in availableDatesAsc
-let allCategories = []; // Cached category list
+let allCategoryData = {}; // category -> { dateStr -> count }
+let allDatesSet = new Set(); // unique dates from "date" column
+let availableDates = [];      // descending
+let availableDatesAsc = [];   // ascending
+let dateIndexMap = {};        // dateStr -> index in availableDatesAsc
+let allCategories = [];       // cached category list
 
 let currentDate = null;
 let tableData = [];
@@ -15,7 +15,7 @@ let filters = {
 };
 
 // Initialize the application
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     loadAndProcessData();
     setupEventListeners();
 });
@@ -25,23 +25,23 @@ function setupEventListeners() {
     // Sort headers for Page 1
     const headers = document.querySelectorAll('th[data-sort]');
     headers.forEach(header => {
-        header.addEventListener('click', function() {
+        header.addEventListener('click', function () {
             const sortKey = this.getAttribute('data-sort');
             sortData(sortKey);
         });
     });
-    
+
     // Status filter (Page 1)
-    document.getElementById('status-filter').addEventListener('change', function(e) {
+    document.getElementById('status-filter').addEventListener('change', function (e) {
         filters.status = e.target.value;
         renderTable();
     });
 
     // Navigation Tabs
-    document.getElementById('tab-dashboard').addEventListener('click', function() {
+    document.getElementById('tab-dashboard').addEventListener('click', function () {
         switchTab('dashboard');
     });
-    document.getElementById('tab-trends').addEventListener('click', function() {
+    document.getElementById('tab-trends').addEventListener('click', function () {
         switchTab('trends');
     });
 }
@@ -65,7 +65,7 @@ function switchTab(tabName) {
     }
 }
 
-// Load and process CSV data
+// Load and process CSV data (aggregated view)
 function loadAndProcessData() {
     // Reset storage
     allCategoryData = {};
@@ -80,12 +80,11 @@ function loadAndProcessData() {
         download: true,
         header: true,
         skipEmptyLines: true,
-        worker: true, // Runs parsing in background thread
-        chunk: function(results) {
-            // Process data in chunks
+        worker: true,
+        chunk: function (results) {
             processChunk(results.data);
         },
-        complete: function() {
+        complete: function () {
             try {
                 finalizeDataProcessing();
             } catch (err) {
@@ -93,29 +92,30 @@ function loadAndProcessData() {
                 showError('Error processing data: ' + err.message);
             }
         },
-        error: function(err) {
+        error: function (err) {
             showError('Failed to load CSV file: ' + err);
         }
     });
 }
 
+// Process each chunk of aggregated rows
+// Schema: real_category,status,channel,date,num_of_ticket
 function processChunk(rows) {
-    // Process a chunk of rows and update the global map
     for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
+
         const categoryRaw = row['real_category'];
-        const createdTime = row['Created Time'];
+        const dateStr = row['date'];
+        const numTicketRaw = row['num_of_ticket'];
 
-        if (!categoryRaw || !createdTime) continue;
+        if (!categoryRaw || !dateStr) continue;
 
-        const category = categoryRaw.trim();
+        const category = String(categoryRaw).trim();
         if (!category) continue;
 
-        // Treat date literally as appears in file (YYYY-MM-DD part)
-        const spaceIdx = createdTime.indexOf(' ');
-        const dateStr = spaceIdx > 0 ? createdTime.slice(0, spaceIdx) : createdTime;
-
-        if (!dateStr || dateStr.length < 10 || !dateStr.includes('-')) continue;
+        // num_of_ticket is aggregated count
+        const count = Number(numTicketRaw) || 0;
+        if (count === 0) continue;
 
         allDatesSet.add(dateStr);
 
@@ -126,59 +126,54 @@ function processChunk(rows) {
         }
 
         const prev = categoryMap[dateStr] || 0;
-        categoryMap[dateStr] = prev + 1;
+        categoryMap[dateStr] = prev + count;
     }
 }
 
 function finalizeDataProcessing() {
-    // Build sorted date lists and index map
-    availableDatesAsc = Array.from(allDatesSet).sort(); // ascending
+    availableDatesAsc = Array.from(allDatesSet).sort();
     if (availableDatesAsc.length === 0) {
-        throw new Error("No valid dates found in data");
+        throw new Error('No valid dates found in data');
     }
 
-    availableDates = [...availableDatesAsc].reverse(); // descending
+    availableDates = [...availableDatesAsc].reverse();
 
     dateIndexMap = {};
     for (let i = 0; i < availableDatesAsc.length; i++) {
         dateIndexMap[availableDatesAsc[i]] = i;
     }
 
-    // Cache categories
     allCategories = Object.keys(allCategoryData);
 
-    // Select latest date automatically
     const latestDate = availableDates[0];
     filters.date = latestDate;
 
-    // Update Header Date Display
+    // Update header date text
     const [y, m, d] = latestDate.split('-').map(Number);
-    const dateObj = new Date(y, m - 1, d); 
-    
+    const dateObj = new Date(y, m - 1, d);
     const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    document.getElementById('current-date').textContent = dateObj.toLocaleDateString('en-US', dateOptions);
+    document.getElementById('current-date').textContent =
+        dateObj.toLocaleDateString('en-US', dateOptions);
 
-    // Hide loading and show content before heavy work, so UI paints first
+    // Show dashboard first
     document.getElementById('loading').style.display = 'none';
     document.getElementById('view-dashboard').style.display = 'block';
 
-    // Defer table build to next frame to keep UI responsive
+    // Build table after UI is painted
     requestAnimationFrame(() => {
         updateTableForDate(latestDate);
     });
 }
 
-// --- Page 1 Logic ---
+// --- Page 1: Today vs Baseline ---
 
 function updateTableForDate(dateStr) {
     currentDate = dateStr;
-    
     document.getElementById('date-column-header').textContent = `Count (${dateStr})`;
 
     const processedData = [];
     const categories = allCategories;
-
-    const lookbackWindow = 14;
+    const lookbackWindow = 21;
     const currentIndex = dateIndexMap[dateStr];
 
     for (let c = 0; c < categories.length; c++) {
@@ -187,7 +182,7 @@ function updateTableForDate(dateStr) {
 
         const todayCount = counts[dateStr] || 0;
 
-        // Baseline using previous 14 indices in availableDatesAsc
+        // Baseline from previous 21 dates in availableDatesAsc
         let totalCount = 0;
         let daysCounted = 0;
 
@@ -202,7 +197,7 @@ function updateTableForDate(dateStr) {
 
         const baseline = daysCounted > 0 ? totalCount / daysCounted : 0;
         const delta = todayCount - baseline;
-        
+
         let isAnomaly = false;
         let anomalyType = null;
         let percentChange = 0;
@@ -233,7 +228,7 @@ function updateTableForDate(dateStr) {
     }
 
     tableData = processedData;
-    sortData(sortConfig.key, false); 
+    sortData(sortConfig.key, false);
 }
 
 function sortData(key, toggle = true) {
@@ -259,8 +254,8 @@ function sortData(key, toggle = true) {
         let valB = b[key];
 
         if (key === 'category') {
-            return sortConfig.direction === 'asc' 
-                ? valA.localeCompare(valB) 
+            return sortConfig.direction === 'asc'
+                ? valA.localeCompare(valB)
                 : valB.localeCompare(valA);
         }
         return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
@@ -283,14 +278,15 @@ function renderTable() {
     });
 
     if (filteredData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="text-align:center; color: #64748b;">No data matches filters</td></tr>';
+        tbody.innerHTML =
+            '<tr><td colspan="5" class="text-center" style="text-align:center; color: #64748b;">No data matches filters</td></tr>';
         return;
     }
 
     for (let i = 0; i < filteredData.length; i++) {
         const item = filteredData[i];
         const tr = document.createElement('tr');
-        
+
         let deltaClass = 'delta-neutral';
         if (item.delta > 0) deltaClass = 'delta-positive';
         if (item.delta < 0) deltaClass = 'delta-negative';
@@ -306,21 +302,22 @@ function renderTable() {
     }
 }
 
-// --- Page 2 Logic: Daily Trend ---
+// --- Page 2: Daily Trend ---
 
 function renderTrendTable() {
     const tbody = document.getElementById('trend-table-body');
     const thead = document.getElementById('trend-header-row');
-    
+
     if (availableDates.length < 2) {
-        tbody.innerHTML = '<tr><td colspan="100">Not enough data for trend analysis</td></tr>';
+        tbody.innerHTML =
+            '<tr><td colspan="100">Not enough data for trend analysis</td></tr>';
         return;
     }
 
-    // Date Columns (Last 14 days, ascending)
+    // Last 14 dates, ascending
     const trendDates = availableDates.slice(0, 14).reverse();
-    
-    // Build Header
+
+    // Header
     let headerHTML = '<th class="category-cell">Category</th><th>% Changes</th>';
     for (let i = 0; i < trendDates.length; i++) {
         const date = trendDates[i];
@@ -328,11 +325,10 @@ function renderTrendTable() {
     }
     thead.innerHTML = headerHTML;
 
-    // Build Rows
+    // Rows
     const categories = allCategories.slice().sort();
     let rowsHTML = '';
-    
-    // Recent vs previous date
+
     const recentDate = availableDates[0];
     const prevDate = availableDates[1];
 
@@ -342,23 +338,26 @@ function renderTrendTable() {
 
         const recentCount = counts[recentDate] || 0;
         const prevCount = counts[prevDate] || 0;
-        
+
         let changeHTML = '<span class="change-neutral">-</span>';
         let percent = 0;
 
         if (prevCount > 0) {
             percent = Math.round(((recentCount - prevCount) / prevCount) * 100);
             if (percent > 0) {
-                changeHTML = `<span class="change-positive">🔴 ↑ Increased by ${percent}%</span>`;
+                changeHTML =
+                    `<span class="change-positive">🔴 ↑ Increased by ${percent}%</span>`;
             } else if (percent < 0) {
-                changeHTML = `<span class="change-negative">🟢 ↓ Decreased by ${Math.abs(percent)}%</span>`;
+                changeHTML =
+                    `<span class="change-negative">🟢 ↓ Decreased by ${Math.abs(percent)}%</span>`;
             } else {
                 changeHTML = `<span class="change-neutral">No Change</span>`;
             }
         } else if (recentCount > 0) {
-             changeHTML = `<span class="change-positive">🔴 ↑ Increased (New)</span>`;
+            changeHTML =
+                `<span class="change-positive">🔴 ↑ Increased (New)</span>`;
         } else {
-             changeHTML = `<span class="change-neutral">0%</span>`;
+            changeHTML = `<span class="change-neutral">0%</span>`;
         }
 
         let dateCells = '';
@@ -393,7 +392,7 @@ function escapeHtml(text) {
 function createAnomalyBadge(item) {
     const badge = document.createElement('div');
     badge.classList.add('badge');
-    
+
     if (!item.isAnomaly) {
         badge.classList.add('badge-normal');
         badge.innerHTML = `
@@ -403,8 +402,8 @@ function createAnomalyBadge(item) {
             <span>Normal</span>
         `;
         return badge.outerHTML;
-    } 
-    
+    }
+
     if (item.anomalyType === 'high') {
         badge.classList.add('badge-high');
         badge.innerHTML = `
@@ -426,7 +425,7 @@ function createAnomalyBadge(item) {
             <span class="badge-percent">${item.percentChange}%</span>
         `;
     }
-    
+
     return badge.outerHTML;
 }
 
