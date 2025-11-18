@@ -94,7 +94,7 @@ body {
     background-color: #1e293b;
     border-radius: 0.5rem;
     border: 1px solid #334155;
-    overflow-x: auto; /* Important for the wide trend table */
+    overflow-x: auto;
     margin-bottom: 2rem;
 }
 
@@ -102,7 +102,7 @@ table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.875rem;
-    white-space: nowrap; /* Keep trend dates on one line */
+    white-space: nowrap;
 }
 
 th {
@@ -161,12 +161,12 @@ th.desc .sort-arrow::after {
 
 /* Trend Specific Styles */
 .change-positive {
-    color: #f87171; /* Reddish */
+    color: #f87171;
     font-weight: 600;
 }
 
 .change-negative {
-    color: #4ade80; /* Greenish */
+    color: #4ade80;
     font-weight: 600;
 }
 
@@ -249,12 +249,12 @@ th.desc .sort-arrow::after {
     color: #e2e8f0;
     position: sticky;
     left: 0;
-    background-color: #1e293b; /* Match row bg */
+    background-color: #1e293b;
     z-index: 10;
 }
 
 tr:hover .category-cell {
-    background-color: #273548; /* Match hover bg */
+    background-color: #273548;
 }
 
 .today-cell {
