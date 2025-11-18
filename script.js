@@ -308,64 +308,52 @@ function renderAnomalyFeed() {
     
     if (availableDates.length === 0) return;
 
-    // Use Last 14 Days Window
     const dates = availableDates.slice(0, historyWindow); 
+    const allAnomalies = []; // Flat list of all high anomalies
 
-    const problematicData = [];
     const categories = Object.keys(allCategoryData);
 
     categories.forEach(cat => {
-        const history = [];
-        // Filter ONLY High Anomalies
         dates.forEach((date) => {
             const metrics = getMetricsForDate(cat, date);
             // STRICT FILTER: Only keep rows where anomalyType is 'high'
             if (metrics.anomalyType === 'high') {
-                history.push(metrics);
+                allAnomalies.push(metrics);
             }
         });
-
-        if (history.length > 0) {
-            // Sort history by date (Newest first) for readability
-            history.sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            problematicData.push({
-                category: cat,
-                history: history,
-                // Score based on max delta found in history to float worst issues to top
-                maxDelta: Math.max(...history.map(h => h.delta))
-            });
-        }
     });
 
-    if (problematicData.length === 0) {
+    if (allAnomalies.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding: 2rem; color: #64748b;">No high anomalies detected in the last 14 days.</td></tr>';
         return;
     }
 
-    // Sort categories by severity (Highest Delta)
-    problematicData.sort((a, b) => b.maxDelta - a.maxDelta);
+    // Sort: Date Descending (Newest First) -> then Severity (Delta) Descending
+    allAnomalies.sort((a, b) => {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        if (dateB.getTime() !== dateA.getTime()) {
+            return dateB - dateA; // Newest date first
+        }
+        return b.delta - a.delta; // Highest delta first
+    });
 
     // Render
     let htmlBuffer = '';
-    problematicData.forEach(item => {
-        item.history.forEach(metrics => {
-            // Always 'high' anomaly here due to filter
-            let deltaSign = metrics.delta > 0 ? '+' : '';
-            
-            htmlBuffer += `
-                <tr style="background-color: rgba(127, 29, 29, 0.15);">
-                    <td class="category-cell">${escapeHtml(metrics.category)}</td>
-                    <td style="color:#fca5a5">${metrics.date}</td>
-                    <td class="text-right today-cell">${metrics.today_count}</td>
-                    <td class="text-right baseline-cell">${metrics.baseline}</td>
-                    <td class="text-right delta-cell delta-positive">${deltaSign}${metrics.delta}</td>
-                    <td>${createAnomalyBadge(metrics)}</td>
-                </tr>
-            `;
-        });
-        // Separator
-        htmlBuffer += `<tr><td colspan="6" style="background-color: #1e293b; height: 10px; padding: 0;"></td></tr>`;
+    allAnomalies.forEach(metrics => {
+        let deltaClass = 'delta-positive'; // Always positive for high anomalies usually
+        let deltaSign = metrics.delta > 0 ? '+' : '';
+        
+        htmlBuffer += `
+            <tr style="background-color: rgba(127, 29, 29, 0.15);">
+                <td class="category-cell">${escapeHtml(metrics.category)}</td>
+                <td style="color:#fca5a5">${metrics.date}</td>
+                <td class="text-right today-cell">${metrics.today_count}</td>
+                <td class="text-right baseline-cell">${metrics.baseline}</td>
+                <td class="text-right delta-cell ${deltaClass}">${deltaSign}${metrics.delta}</td>
+                <td>${createAnomalyBadge(metrics)}</td>
+            </tr>
+        `;
     });
 
     tbody.innerHTML = htmlBuffer;
