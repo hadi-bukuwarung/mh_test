@@ -21,6 +21,38 @@ body {
     margin-bottom: 2rem;
 }
 
+/* Navigation Tabs */
+.nav-tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #334155;
+    padding-bottom: 0.5rem;
+}
+
+.nav-btn {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 0.375rem;
+    transition: all 0.2s;
+}
+
+.nav-btn:hover {
+    color: #e2e8f0;
+    background-color: #1e293b;
+}
+
+.nav-btn.active {
+    color: #3b82f6;
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Filters */
 .filters {
     display: flex;
     gap: 1.5rem;
@@ -57,11 +89,12 @@ body {
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
+/* Tables */
 .table-container {
     background-color: #1e293b;
     border-radius: 0.5rem;
     border: 1px solid #334155;
-    overflow-x: auto;
+    overflow-x: auto; /* Important for the wide trend table */
     margin-bottom: 2rem;
 }
 
@@ -69,6 +102,7 @@ table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.875rem;
+    white-space: nowrap; /* Keep trend dates on one line */
 }
 
 th {
@@ -104,6 +138,10 @@ tr:hover {
     text-align: right;
 }
 
+.text-center {
+    text-align: center;
+}
+
 .sort-arrow::after {
     content: "↕";
     margin-left: 0.5rem;
@@ -121,6 +159,31 @@ th.desc .sort-arrow::after {
     opacity: 1;
 }
 
+/* Trend Specific Styles */
+.change-positive {
+    color: #f87171; /* Reddish */
+    font-weight: 600;
+}
+
+.change-negative {
+    color: #4ade80; /* Greenish */
+    font-weight: 600;
+}
+
+.change-neutral {
+    color: #94a3b8;
+}
+
+.trend-date-header {
+    min-width: 100px;
+    text-align: center;
+}
+
+.trend-val {
+    text-align: center;
+}
+
+/* Info Box & Loading */
 .info-box {
     background-color: #1e293b;
     padding: 1.5rem;
@@ -180,9 +243,18 @@ th.desc .sort-arrow::after {
     gap: 1rem;
 }
 
+/* Cell Styles */
 .category-cell {
     font-weight: 500;
     color: #e2e8f0;
+    position: sticky;
+    left: 0;
+    background-color: #1e293b; /* Match row bg */
+    z-index: 10;
+}
+
+tr:hover .category-cell {
+    background-color: #273548; /* Match hover bg */
 }
 
 .today-cell {
