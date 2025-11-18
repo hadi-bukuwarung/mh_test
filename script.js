@@ -197,12 +197,13 @@ function processAggregatedData(rows, headers) {
         allStatusData[trimmedDate].total += count;
         
         const statusLower = status.toLowerCase();
-        if (statusLower.includes('closed')) {
-            allStatusData[trimmedDate].closed += count;
-        } else if (statusLower.includes('pending') || statusLower.includes('hold')) {
-            allStatusData[trimmedDate].pending += count;
+        if (statusLower === 'open') {
+             allStatusData[trimmedDate].open += count;
+        } else if (statusLower === 'closed') {
+             allStatusData[trimmedDate].closed += count;
         } else {
-            allStatusData[trimmedDate].open += count;
+             // Everything else is pending
+             allStatusData[trimmedDate].pending += count;
         }
 
         // 4. Weekly Data (Category)
