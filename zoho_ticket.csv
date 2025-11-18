@@ -1,4 +1,4 @@
-real_category,Status,Channel,date,COUNTA of ID
+real_category,Status,Channel,date,num_of_ticket
 Complaint::All::Massive Issue,Closed,Chat,2025-08-01,24
 Complaint::All::Massive Issue,Closed,Chat,2025-08-07,177
 Complaint::All::Massive Issue,Closed,Chat,2025-08-13,13
@@ -19612,4 +19612,5 @@ Request::V2 EDC::Wrong Transfer,Closed,Chat,2025-09-28,1
 Request::V2 EDC::Wrong Transfer,Closed,Slack,2025-08-06,1
 Request::V2 EDC::Wrong Transfer,Closed,Slack,2025-08-24,1
 Request::V2 EDC::Wrong Transfer,Closed,Slack,2025-08-27,1
+
 Request::V2 EDC::Wrong Transfer,Closed,Slack,2025-09-28,1
