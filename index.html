@@ -47,25 +47,6 @@
 
         <!-- Page 1: Dashboard View -->
         <div id="view-dashboard" class="view-section" style="display: none;">
-            <!-- Status Health Scorecard (Moved from Page 1) -->
-            <div class="scorecard-container">
-                <div class="scorecard-title">Status Health (Today)</div>
-                <div class="scorecard-metrics">
-                    <div class="metric-box">
-                        <div class="metric-label">Open</div>
-                        <div id="health-open" class="metric-value">0%</div>
-                    </div>
-                    <div class="metric-box">
-                        <div class="metric-label">Pending</div>
-                        <div id="health-pending" class="metric-value">0%</div>
-                    </div>
-                    <div class="metric-box">
-                        <div class="metric-label">Closed</div>
-                        <div id="health-closed" class="metric-value">0%</div>
-                    </div>
-                </div>
-            </div>
-
             <div class="filters">
                 <div class="filter-group">
                     <label for="status-filter">Status:</label>
@@ -198,6 +179,25 @@
 
         <!-- Page 5: Status Health View -->
         <div id="view-status" class="view-section" style="display: none;">
+            <!-- Status Health Scorecard (Moved Here) -->
+            <div class="scorecard-container">
+                <div class="scorecard-title">Status Health (Today)</div>
+                <div class="scorecard-metrics">
+                    <div class="metric-box">
+                        <div class="metric-label">Open</div>
+                        <div id="health-open" class="metric-value">0%</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Pending</div>
+                        <div id="health-pending" class="metric-value">0%</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Closed</div>
+                        <div id="health-closed" class="metric-value">0%</div>
+                    </div>
+                </div>
+            </div>
+
             <div class="filters">
                 <div class="filter-group">
                     <label for="health-status-filter">Ticket Status:</label>
