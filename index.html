@@ -19,6 +19,7 @@
             <button id="tab-trends" class="nav-btn">Daily Trend</button>
             <button id="tab-weekly" class="nav-btn">Weekly Trend</button>
             <button id="tab-channel" class="nav-btn">Channel Trend</button>
+            <button id="tab-status" class="nav-btn">Status Health</button>
             <button id="tab-feed" class="nav-btn">Anomaly Feed</button>
         </div>
 
@@ -43,24 +44,7 @@
 
         <!-- Page 1: Dashboard View -->
         <div id="view-dashboard" class="view-section" style="display: none;">
-            <!-- Status Health Scorecard -->
-            <div class="scorecard-container">
-                <div class="scorecard-title">Status Health (Today)</div>
-                <div class="scorecard-metrics">
-                    <div class="metric-box">
-                        <div class="metric-label">Open</div>
-                        <div id="health-open" class="metric-value">0%</div>
-                    </div>
-                    <div class="metric-box">
-                        <div class="metric-label">Pending</div>
-                        <div id="health-pending" class="metric-value">0%</div>
-                    </div>
-                    <div class="metric-box">
-                        <div class="metric-label">Closed</div>
-                        <div id="health-closed" class="metric-value">0%</div>
-                    </div>
-                </div>
-            </div>
+            <!-- Scorecard MOVED to Page 5 (Status Health) -->
 
             <div class="filters">
                 <div class="filter-group">
@@ -171,7 +155,7 @@
             </div>
         </div>
 
-        <!-- Page 4: Channel Trend View (New) -->
+        <!-- Page 4: Channel Trend View -->
         <div id="view-channel" class="view-section" style="display: none;">
             <div class="info-box" style="margin-bottom: 1.5rem;">
                 <p style="color: #94a3b8; font-size: 0.875rem;">
@@ -192,8 +176,55 @@
             </div>
         </div>
 
+        <!-- Page 5: Status Health View (New) -->
+        <div id="view-status" class="view-section" style="display: none;">
+            <!-- Status Health Scorecard (Moved from Page 1) -->
+            <div class="scorecard-container">
+                <div class="scorecard-title">Status Health (Today)</div>
+                <div class="scorecard-metrics">
+                    <div class="metric-box">
+                        <div class="metric-label">Open</div>
+                        <div id="health-open" class="metric-value">0%</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Pending</div>
+                        <div id="health-pending" class="metric-value">0%</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Closed</div>
+                        <div id="health-closed" class="metric-value">0%</div>
+                    </div>
+                </div>
+            </div>
 
-        <!-- Page 5: Anomaly Feed View -->
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="health-status-filter">Ticket Status:</label>
+                    <select id="health-status-filter">
+                        <option value="all_non_closed">All Non-Closed</option>
+                        <option value="open">Open</option>
+                        <option value="pending">Pending</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="health-table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th class="text-right">Count</th>
+                        </tr>
+                    </thead>
+                    <tbody id="health-table-body">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Page 6: Anomaly Feed View -->
         <div id="view-feed" class="view-section" style="display: none;">
             <div class="info-box" style="margin-bottom: 1.5rem;">
                 <h3>Anomaly Feed</h3>
