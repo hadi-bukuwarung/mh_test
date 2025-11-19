@@ -1,11 +1,12 @@
 // Global state
 let allCategoryData = {}; // Map: Category -> Date -> Count
-let allChannelData = {}; // Map: Channel -> Date -> Count (New)
+let allChannelData = {}; // Map: Channel -> Date -> Count
 let allDatesSet = new Set();
 let availableDates = []; // Sorted descending (Index 0 = Newest)
 let allWeeklyData = {}; // Map: Category -> WeekStr -> Count
 let availableWeeks = []; // Sorted descending (YYYY-MM-DD of Monday)
-let allStatusData = {}; // Map: Date -> { Open: count, Pending: count, Closed: count } (New)
+let allStatusData = {}; // Map: Date -> { Open: count, Pending: count, Closed: count }
+let allRawRows = []; // Store valid rows for detail views (Status Health)
 let currentDate = null;
 let tableData = [];
 let sortConfig = { key: 'today_count', direction: 'desc' };
@@ -17,7 +18,8 @@ let filters = {
     trendCategory: 'all',
     trendSubcategory: 'all',
     weeklyCategory: 'all',
-    weeklySubcategory: 'all'
+    weeklySubcategory: 'all',
+    healthStatus: 'all_non_closed' // New Filter
 };
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -69,11 +71,18 @@ function setupEventListeners() {
         renderWeeklyTable();
     });
 
+    // Status Health Filter
+    document.getElementById('health-status-filter').addEventListener('change', function(e) {
+        filters.healthStatus = e.target.value;
+        renderStatusHealthTable();
+    });
+
     // Tabs
     document.getElementById('tab-dashboard').addEventListener('click', () => switchTab('dashboard'));
     document.getElementById('tab-trends').addEventListener('click', () => switchTab('trends'));
     document.getElementById('tab-weekly').addEventListener('click', () => switchTab('weekly'));
     document.getElementById('tab-channel').addEventListener('click', () => switchTab('channel'));
+    document.getElementById('tab-status').addEventListener('click', () => switchTab('status'));
     document.getElementById('tab-feed').addEventListener('click', () => switchTab('feed'));
 }
 
@@ -81,7 +90,7 @@ function switchTab(tabName) {
     document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById(`tab-${tabName}`).classList.add('active');
 
-    const views = ['view-dashboard', 'view-trends', 'view-weekly', 'view-channel', 'view-feed'];
+    const views = ['view-dashboard', 'view-trends', 'view-weekly', 'view-channel', 'view-status', 'view-feed'];
     views.forEach(id => document.getElementById(id).style.display = 'none');
 
     if (tabName === 'dashboard') {
@@ -96,6 +105,9 @@ function switchTab(tabName) {
     } else if (tabName === 'channel') {
         document.getElementById('view-channel').style.display = 'block';
         if (availableDates.length > 0) renderChannelTable();
+    } else if (tabName === 'status') {
+        document.getElementById('view-status').style.display = 'block';
+        if (availableDates.length > 0) renderStatusHealthTable();
     } else if (tabName === 'feed') {
         document.getElementById('view-feed').style.display = 'block';
         if (availableDates.length > 0) renderAnomalyFeed();
@@ -134,8 +146,8 @@ function processAggregatedData(rows, headers) {
     const catCol = findHeader('real_category');
     const dateCol = findHeader('date');
     const countCol = findHeader('num_of_ticket');
-    const channelCol = findHeader('channel'); // New
-    const statusCol = findHeader('status');   // New
+    const channelCol = findHeader('channel');
+    const statusCol = findHeader('status');
 
     if (!rows[0].hasOwnProperty(catCol) || !rows[0].hasOwnProperty(dateCol)) {
         throw new Error(`Missing required columns. Found: ${headers.join(', ')}. Expected 'real_category' and 'date'.`);
@@ -146,6 +158,7 @@ function processAggregatedData(rows, headers) {
     allStatusData = {};
     allDatesSet = new Set();
     allWeeklyData = {};
+    allRawRows = []; // Reset
     let weeklySet = new Set();
 
     const getMonday = (d) => {
@@ -166,8 +179,8 @@ function processAggregatedData(rows, headers) {
         const row = rows[i];
         const category = row[catCol];
         const dateStr = row[dateCol];
-        const channel = row[channelCol] || 'Unknown'; // Get Channel
-        const status = row[statusCol] || 'Open';      // Get Status
+        const channel = row[channelCol] || 'Unknown';
+        let status = row[statusCol] || 'Open';
         let count = 1;
 
         if (countCol && row[countCol]) {
@@ -180,14 +193,28 @@ function processAggregatedData(rows, headers) {
         const trimmedDate = dateStr.trim();
         if (trimmedDate.length < 10) continue;
 
+        // Normalize Status
+        const statusLower = status.toLowerCase();
+        let normalizedStatus = 'Pending'; // Default everything else to Pending
+        if (statusLower === 'open') normalizedStatus = 'Open';
+        else if (statusLower === 'closed') normalizedStatus = 'Closed';
+        
+        // Store for Status Health Page
+        allRawRows.push({
+            category: category,
+            date: trimmedDate,
+            status: normalizedStatus,
+            count: count
+        });
+
         allDatesSet.add(trimmedDate);
         
-        // 1. Category Data (Daily)
+        // 1. Category Data
         if (!allCategoryData[category]) allCategoryData[category] = {};
         if (!allCategoryData[category][trimmedDate]) allCategoryData[category][trimmedDate] = 0;
         allCategoryData[category][trimmedDate] += count;
 
-        // 2. Channel Data (Daily)
+        // 2. Channel Data
         if (!allChannelData[channel]) allChannelData[channel] = {};
         if (!allChannelData[channel][trimmedDate]) allChannelData[channel][trimmedDate] = 0;
         allChannelData[channel][trimmedDate] += count;
@@ -196,17 +223,11 @@ function processAggregatedData(rows, headers) {
         if (!allStatusData[trimmedDate]) allStatusData[trimmedDate] = { total: 0, open: 0, pending: 0, closed: 0 };
         allStatusData[trimmedDate].total += count;
         
-        const statusLower = status.toLowerCase();
-        if (statusLower === 'open') {
-             allStatusData[trimmedDate].open += count;
-        } else if (statusLower === 'closed') {
-             allStatusData[trimmedDate].closed += count;
-        } else {
-             // Everything else is pending
-             allStatusData[trimmedDate].pending += count;
-        }
+        if (normalizedStatus === 'Open') allStatusData[trimmedDate].open += count;
+        else if (normalizedStatus === 'Closed') allStatusData[trimmedDate].closed += count;
+        else allStatusData[trimmedDate].pending += count;
 
-        // 4. Weekly Data (Category)
+        // 4. Weekly Data
         const [y, m, d] = trimmedDate.split('-').map(Number);
         const dateObj = new Date(y, m - 1, d);
         const mondayObj = getMonday(dateObj);
@@ -237,7 +258,6 @@ function processAggregatedData(rows, headers) {
         document.getElementById('current-date').textContent = latestDate;
     }
 
-    // Update Status Scorecard
     updateStatusScorecard(latestDate);
 
     document.getElementById('loading').style.display = 'none';
@@ -258,10 +278,61 @@ function updateStatusScorecard(dateStr) {
     document.getElementById('health-pending').textContent = getPercent(stats.pending);
     document.getElementById('health-closed').textContent = getPercent(stats.closed);
     
-    // Set Colors based on simplistic logic
     document.getElementById('health-open').style.color = stats.open > 0 ? '#fca5a5' : '#f1f5f9';
-    document.getElementById('health-closed').style.color = '#4ade80'; // Green for closed
-    document.getElementById('health-pending').style.color = '#fde047'; // Yellow for pending
+    document.getElementById('health-closed').style.color = '#4ade80'; 
+    document.getElementById('health-pending').style.color = '#fde047'; 
+}
+
+// --- Page 5: Status Health Table Logic (New) ---
+
+function renderStatusHealthTable() {
+    const tbody = document.getElementById('health-table-body');
+    
+    // Filter Data
+    const filteredRows = allRawRows.filter(row => {
+        if (row.status === 'Closed') return false; // Never show closed in this table as per "list of non closed ticket"
+        
+        if (filters.healthStatus === 'open' && row.status !== 'Open') return false;
+        if (filters.healthStatus === 'pending' && row.status !== 'Pending') return false;
+        return true;
+    });
+
+    if (filteredRows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center" style="padding: 2rem; color: #64748b;">No tickets match criteria</td></tr>';
+        return;
+    }
+
+    // Sort by Date Descending
+    filteredRows.sort((a, b) => {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        return dateB - dateA;
+    });
+
+    // Limit display for performance if huge (optional, but safe practice for DOM)
+    const displayRows = filteredRows.slice(0, 500); // Show top 500 most recent
+
+    let htmlBuffer = '';
+    displayRows.forEach(row => {
+        let statusColor = '#f1f5f9';
+        if (row.status === 'Open') statusColor = '#fca5a5';
+        if (row.status === 'Pending') statusColor = '#fde047';
+
+        htmlBuffer += `
+            <tr>
+                <td class="category-cell">${escapeHtml(row.category)}</td>
+                <td>${row.date}</td>
+                <td style="color: ${statusColor}; font-weight: 600;">${row.status}</td>
+                <td class="text-right">${row.count}</td>
+            </tr>
+        `;
+    });
+    
+    if (filteredRows.length > 500) {
+        htmlBuffer += `<tr><td colspan="4" class="text-center" style="padding: 1rem; color: #64748b;">...and ${filteredRows.length - 500} more</td></tr>`;
+    }
+
+    tbody.innerHTML = htmlBuffer;
 }
 
 // --- Filters Logic ---
