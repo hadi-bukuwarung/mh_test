@@ -23,12 +23,12 @@ let filters = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-    fetchExternalMetadata(); // New Function
+    fetchExternalMetadata(); 
     loadAndProcessData();
     setupEventListeners();
 });
 
-// NEW: Fetch metadata.json
+// Fetch metadata.json
 async function fetchExternalMetadata() {
     const label = document.getElementById('last-updated');
     try {
@@ -37,19 +37,17 @@ async function fetchExternalMetadata() {
         
         const data = await response.json();
         if (data.last_updated) {
-            // Try to format the date nicely
             const dateObj = new Date(data.last_updated);
             if (!isNaN(dateObj.getTime())) {
                 label.textContent = `Data as of: ${dateObj.toLocaleString('en-US', { 
                     year: 'numeric', month: 'short', day: 'numeric', 
                     hour: '2-digit', minute: '2-digit' 
                 })}`;
-                return; // Success
+                return; 
             }
         }
         throw new Error('Invalid metadata format');
     } catch (err) {
-        console.log('Metadata fetch failed, falling back to CSV header check.', err);
         // Fallback: Check CSV Last-Modified Header
         try {
             const csvResponse = await fetch('zoho_ticket.csv', { method: 'HEAD' });
@@ -179,24 +177,27 @@ function loadAndProcessData() {
 function processAggregatedData(rows, headers) {
     if (!rows || rows.length === 0) throw new Error("CSV file is empty");
 
+    // Fix: Return null if not found, so fallback || works correctly
     const findHeader = (target) => {
-        if (!headers) return target;
+        if (!headers) return null;
         const match = headers.find(h => h.trim().toLowerCase().replace(/^[\uFEFF\n\r]+/, '') === target.toLowerCase());
-        return match || target; 
+        return match || null; 
     };
 
     const catCol = findHeader('real_category');
-    // Prioritize 'Created Time' for full datetime, fallback to 'date' or 'Date'
-    const dateCol = findHeader('Created Time') || findHeader('created time') || findHeader('date') || findHeader('Date');
+    
+    // Priority check for Date columns
+    const dateCol = findHeader('Created Time') || findHeader('created time') || findHeader('date') || findHeader('Date') || findHeader('time');
+    
     const countCol = findHeader('num_of_ticket');
     const channelCol = findHeader('channel') || findHeader('Channel');
     const statusCol = findHeader('status') || findHeader('Status');
 
-    if (!rows[0].hasOwnProperty(catCol)) {
-        throw new Error(`Missing 'real_category' column. Found: ${headers.join(', ')}`);
+    if (!catCol) {
+        throw new Error(`Missing 'real_category' column. Found headers: ${headers.join(', ')}`);
     }
     if (!dateCol) {
-         throw new Error(`Missing Date/Created Time column. Found: ${headers.join(', ')}`);
+         throw new Error(`Missing Date column (checked: 'Created Time', 'date'). Found headers: ${headers.join(', ')}`);
     }
 
     allCategoryData = {};
@@ -207,12 +208,9 @@ function processAggregatedData(rows, headers) {
     allRawRows = []; 
     let weeklySet = new Set();
 
-    // Updated: Get SUNDAY of the week
     const getSunday = (d) => {
         const date = new Date(d);
         const day = date.getDay();
-        // If Sunday(0), diff is 0. If Mon(1), diff is -1.
-        // Date - day gives us the previous Sunday (or today if Sunday)
         const diff = date.getDate() - day; 
         return new Date(date.setDate(diff));
     };
@@ -228,16 +226,14 @@ function processAggregatedData(rows, headers) {
         const row = rows[i];
         const category = row[catCol];
         
-        // Extract Date YYYY-MM-DD from full datetime if present
         let rawDateStr = row[dateCol];
         if (!rawDateStr) continue;
         
-        // Handle "2025-11-17 20:36:14" -> "2025-11-17"
-        // Or "2025-11-17" -> "2025-11-17"
+        // Safe split to extract YYYY-MM-DD
         let dateStr = rawDateStr.split(' ')[0].trim(); 
         
-        const channel = row[channelCol] || 'Unknown';
-        let status = row[statusCol] || 'Open';
+        const channel = channelCol ? (row[channelCol] || 'Unknown') : 'Unknown';
+        const status = statusCol ? (row[statusCol] || 'Open') : 'Open';
         let count = 1;
 
         if (countCol && row[countCol]) {
@@ -246,7 +242,7 @@ function processAggregatedData(rows, headers) {
         }
 
         if (!category || !dateStr) continue;
-        if (dateStr.length < 10) continue; // Basic validation YYYY-MM-DD
+        if (dateStr.length < 10) continue; 
 
         // --- Status Normalization for Scorecard ---
         const statusLower = status.toLowerCase();
@@ -254,10 +250,9 @@ function processAggregatedData(rows, headers) {
         if (statusLower === 'open') normalizedStatus = 'Open';
         else if (statusLower === 'closed') normalizedStatus = 'Closed';
         
-        // Store for Status Health Page
         allRawRows.push({
             category: category,
-            date: dateStr, // Using extracted YYYY-MM-DD
+            date: dateStr,
             status: status, 
             count: count
         });
@@ -295,7 +290,7 @@ function processAggregatedData(rows, headers) {
     }
 
     availableDates = Array.from(allDatesSet).sort().reverse(); 
-    if (availableDates.length === 0) throw new Error("No valid dates found.");
+    if (availableDates.length === 0) throw new Error("No valid dates found in parsed rows.");
 
     availableWeeks = Array.from(weeklySet).sort().reverse();
 
@@ -338,27 +333,20 @@ function updateStatusScorecard(dateStr) {
     document.getElementById('health-pending').style.color = '#fde047'; 
 }
 
-// --- Page 5: Status Health Table Logic (New) ---
+// --- Page 5: Status Health Table Logic ---
 
 function renderStatusHealthTable() {
     const tbody = document.getElementById('health-table-body');
     
-    // Filter Data
     const filteredRows = allRawRows.filter(row => {
         const statusLower = row.status.toLowerCase();
-        
-        // 1. Never show closed
         if (statusLower.includes('closed')) return false; 
 
-        // 2. Check open vs pending filter
         if (filters.healthStatus === 'open') {
             return statusLower === 'open';
         } else if (filters.healthStatus === 'pending') {
-            // Filter out 'open' since 'pending' means everything else non-closed/non-open
             return statusLower !== 'open'; 
         } 
-        
-        // 'all_non_closed' returns true if it passed the 'never show closed' check
         return true;
     });
 
@@ -367,24 +355,21 @@ function renderStatusHealthTable() {
         return;
     }
 
-    // Sort by Date Descending
     filteredRows.sort((a, b) => {
         const dateA = new Date(a.date);
         const dateB = new Date(b.date);
         return dateB - dateA;
     });
 
-    // Limit display for performance if huge (optional, but safe practice for DOM)
-    const displayRows = filteredRows.slice(0, 500); // Show top 500 most recent
+    const displayRows = filteredRows.slice(0, 500); 
 
     let htmlBuffer = '';
     displayRows.forEach(row => {
         const statusLower = row.status.toLowerCase();
         let statusColor = '#f1f5f9';
         
-        // Determine color based on normalized status type (Open/Pending)
         if (statusLower === 'open') statusColor = '#fca5a5';
-        else if (!statusLower.includes('closed')) statusColor = '#fde047'; // Pending color
+        else if (!statusLower.includes('closed')) statusColor = '#fde047'; 
 
         htmlBuffer += `
             <tr>
