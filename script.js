@@ -4,7 +4,7 @@ let allChannelData = {}; // Map: Channel -> Date -> Count
 let allDatesSet = new Set();
 let availableDates = []; // Sorted descending (Index 0 = Newest)
 let allWeeklyData = {}; // Map: Category -> WeekStr -> Count
-let availableWeeks = []; // Sorted descending (YYYY-MM-DD of Monday)
+let availableWeeks = []; // Sorted descending (YYYY-MM-DD of Sunday)
 let allStatusData = {}; // Map: Date -> { Open: count, Pending: count, Closed: count }
 let allRawRows = []; // Store valid rows for detail views (Status Health)
 let currentDate = null;
@@ -19,7 +19,7 @@ let filters = {
     trendSubcategory: 'all',
     weeklyCategory: 'all',
     weeklySubcategory: 'all',
-    healthStatus: 'all_non_closed' // New Filter
+    healthStatus: 'all_non_closed' 
 };
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -144,13 +144,17 @@ function processAggregatedData(rows, headers) {
     };
 
     const catCol = findHeader('real_category');
-    const dateCol = findHeader('date');
+    // Prioritize 'Created Time' for full datetime, fallback to 'date' or 'Date'
+    const dateCol = findHeader('Created Time') || findHeader('created time') || findHeader('date') || findHeader('Date');
     const countCol = findHeader('num_of_ticket');
-    const channelCol = findHeader('channel');
-    const statusCol = findHeader('status');
+    const channelCol = findHeader('channel') || findHeader('Channel');
+    const statusCol = findHeader('status') || findHeader('Status');
 
-    if (!rows[0].hasOwnProperty(catCol) || !rows[0].hasOwnProperty(dateCol)) {
-        throw new Error(`Missing required columns. Found: ${headers.join(', ')}. Expected 'real_category' and 'date'.`);
+    if (!rows[0].hasOwnProperty(catCol)) {
+        throw new Error(`Missing 'real_category' column. Found: ${headers.join(', ')}`);
+    }
+    if (!dateCol) {
+         throw new Error(`Missing Date/Created Time column. Found: ${headers.join(', ')}`);
     }
 
     allCategoryData = {};
@@ -158,13 +162,16 @@ function processAggregatedData(rows, headers) {
     allStatusData = {};
     allDatesSet = new Set();
     allWeeklyData = {};
-    allRawRows = []; // Reset
+    allRawRows = []; 
     let weeklySet = new Set();
 
-    const getMonday = (d) => {
+    // Updated: Get SUNDAY of the week
+    const getSunday = (d) => {
         const date = new Date(d);
         const day = date.getDay();
-        const diff = date.getDate() - day + (day === 0 ? -6 : 1); 
+        // If Sunday(0), diff is 0. If Mon(1), diff is -1.
+        // Date - day gives us the previous Sunday (or today if Sunday)
+        const diff = date.getDate() - day; 
         return new Date(date.setDate(diff));
     };
 
@@ -178,7 +185,15 @@ function processAggregatedData(rows, headers) {
     for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
         const category = row[catCol];
-        const dateStr = row[dateCol];
+        
+        // Extract Date YYYY-MM-DD from full datetime if present
+        let rawDateStr = row[dateCol];
+        if (!rawDateStr) continue;
+        
+        // Handle "2025-11-17 20:36:14" -> "2025-11-17"
+        // Or "2025-11-17" -> "2025-11-17"
+        let dateStr = rawDateStr.split(' ')[0].trim(); 
+        
         const channel = row[channelCol] || 'Unknown';
         let status = row[statusCol] || 'Open';
         let count = 1;
@@ -189,50 +204,47 @@ function processAggregatedData(rows, headers) {
         }
 
         if (!category || !dateStr) continue;
-
-        const trimmedDate = dateStr.trim();
-        if (trimmedDate.length < 10) continue;
+        if (dateStr.length < 10) continue; // Basic validation YYYY-MM-DD
 
         // --- Status Normalization for Scorecard ---
         const statusLower = status.toLowerCase();
-        let normalizedStatus = 'Pending'; // Default everything else to Pending for scorecard
+        let normalizedStatus = 'Pending'; 
         if (statusLower === 'open') normalizedStatus = 'Open';
         else if (statusLower === 'closed') normalizedStatus = 'Closed';
         
-        // Store for Status Health Page (using original raw status)
+        // Store for Status Health Page
         allRawRows.push({
             category: category,
-            date: trimmedDate,
-            // Store the original raw status here
+            date: dateStr, // Using extracted YYYY-MM-DD
             status: status, 
             count: count
         });
 
-        allDatesSet.add(trimmedDate);
+        allDatesSet.add(dateStr);
         
         // 1. Category Data
         if (!allCategoryData[category]) allCategoryData[category] = {};
-        if (!allCategoryData[category][trimmedDate]) allCategoryData[category][trimmedDate] = 0;
-        allCategoryData[category][trimmedDate] += count;
+        if (!allCategoryData[category][dateStr]) allCategoryData[category][dateStr] = 0;
+        allCategoryData[category][dateStr] += count;
 
         // 2. Channel Data
         if (!allChannelData[channel]) allChannelData[channel] = {};
-        if (!allChannelData[channel][trimmedDate]) allChannelData[channel][trimmedDate] = 0;
-        allChannelData[channel][trimmedDate] += count;
+        if (!allChannelData[channel][dateStr]) allChannelData[channel][dateStr] = 0;
+        allChannelData[channel][dateStr] += count;
 
-        // 3. Status Data (Daily) - Uses normalized status for scorecard calculation
-        if (!allStatusData[trimmedDate]) allStatusData[trimmedDate] = { total: 0, open: 0, pending: 0, closed: 0 };
-        allStatusData[trimmedDate].total += count;
+        // 3. Status Data (Daily)
+        if (!allStatusData[dateStr]) allStatusData[dateStr] = { total: 0, open: 0, pending: 0, closed: 0 };
+        allStatusData[dateStr].total += count;
         
-        if (normalizedStatus === 'Open') allStatusData[trimmedDate].open += count;
-        else if (normalizedStatus === 'Closed') allStatusData[trimmedDate].closed += count;
-        else allStatusData[trimmedDate].pending += count;
+        if (normalizedStatus === 'Open') allStatusData[dateStr].open += count;
+        else if (normalizedStatus === 'Closed') allStatusData[dateStr].closed += count;
+        else allStatusData[dateStr].pending += count;
 
-        // 4. Weekly Data
-        const [y, m, d] = trimmedDate.split('-').map(Number);
+        // 4. Weekly Data (Sunday Start)
+        const [y, m, d] = dateStr.split('-').map(Number);
         const dateObj = new Date(y, m - 1, d);
-        const mondayObj = getMonday(dateObj);
-        const weekStr = formatDate(mondayObj);
+        const sundayObj = getSunday(dateObj);
+        const weekStr = formatDate(sundayObj);
 
         weeklySet.add(weekStr);
         if (!allWeeklyData[category]) allWeeklyData[category] = {};
