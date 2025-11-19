@@ -23,9 +23,51 @@ let filters = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
+    fetchExternalMetadata(); // New Function
     loadAndProcessData();
     setupEventListeners();
 });
+
+// NEW: Fetch metadata.json
+async function fetchExternalMetadata() {
+    const label = document.getElementById('last-updated');
+    try {
+        const response = await fetch('metadata.json');
+        if (!response.ok) throw new Error('Metadata file missing');
+        
+        const data = await response.json();
+        if (data.last_updated) {
+            // Try to format the date nicely
+            const dateObj = new Date(data.last_updated);
+            if (!isNaN(dateObj.getTime())) {
+                label.textContent = `Data as of: ${dateObj.toLocaleString('en-US', { 
+                    year: 'numeric', month: 'short', day: 'numeric', 
+                    hour: '2-digit', minute: '2-digit' 
+                })}`;
+                return; // Success
+            }
+        }
+        throw new Error('Invalid metadata format');
+    } catch (err) {
+        console.log('Metadata fetch failed, falling back to CSV header check.', err);
+        // Fallback: Check CSV Last-Modified Header
+        try {
+            const csvResponse = await fetch('zoho_ticket.csv', { method: 'HEAD' });
+            const lastMod = csvResponse.headers.get('Last-Modified');
+            if (lastMod) {
+                const dateObj = new Date(lastMod);
+                label.textContent = `Data as of: ${dateObj.toLocaleString('en-US', { 
+                    year: 'numeric', month: 'short', day: 'numeric', 
+                    hour: '2-digit', minute: '2-digit' 
+                })}`;
+            } else {
+                label.textContent = 'Data update time unknown';
+            }
+        } catch (e) {
+            label.textContent = 'Data update time unknown';
+        }
+    }
+}
 
 function setupEventListeners() {
     // Sorting (Dashboard)
