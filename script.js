@@ -193,17 +193,18 @@ function processAggregatedData(rows, headers) {
         const trimmedDate = dateStr.trim();
         if (trimmedDate.length < 10) continue;
 
-        // Normalize Status
+        // --- Status Normalization for Scorecard ---
         const statusLower = status.toLowerCase();
-        let normalizedStatus = 'Pending'; // Default everything else to Pending
+        let normalizedStatus = 'Pending'; // Default everything else to Pending for scorecard
         if (statusLower === 'open') normalizedStatus = 'Open';
         else if (statusLower === 'closed') normalizedStatus = 'Closed';
         
-        // Store for Status Health Page
+        // Store for Status Health Page (using original raw status)
         allRawRows.push({
             category: category,
             date: trimmedDate,
-            status: normalizedStatus,
+            // Store the original raw status here
+            status: status, 
             count: count
         });
 
@@ -219,7 +220,7 @@ function processAggregatedData(rows, headers) {
         if (!allChannelData[channel][trimmedDate]) allChannelData[channel][trimmedDate] = 0;
         allChannelData[channel][trimmedDate] += count;
 
-        // 3. Status Data (Daily)
+        // 3. Status Data (Daily) - Uses normalized status for scorecard calculation
         if (!allStatusData[trimmedDate]) allStatusData[trimmedDate] = { total: 0, open: 0, pending: 0, closed: 0 };
         allStatusData[trimmedDate].total += count;
         
@@ -290,10 +291,20 @@ function renderStatusHealthTable() {
     
     // Filter Data
     const filteredRows = allRawRows.filter(row => {
-        if (row.status === 'Closed') return false; // Never show closed in this table as per "list of non closed ticket"
+        const statusLower = row.status.toLowerCase();
         
-        if (filters.healthStatus === 'open' && row.status !== 'Open') return false;
-        if (filters.healthStatus === 'pending' && row.status !== 'Pending') return false;
+        // 1. Never show closed
+        if (statusLower.includes('closed')) return false; 
+
+        // 2. Check open vs pending filter
+        if (filters.healthStatus === 'open') {
+            return statusLower === 'open';
+        } else if (filters.healthStatus === 'pending') {
+            // Filter out 'open' since 'pending' means everything else non-closed/non-open
+            return statusLower !== 'open'; 
+        } 
+        
+        // 'all_non_closed' returns true if it passed the 'never show closed' check
         return true;
     });
 
@@ -314,15 +325,18 @@ function renderStatusHealthTable() {
 
     let htmlBuffer = '';
     displayRows.forEach(row => {
+        const statusLower = row.status.toLowerCase();
         let statusColor = '#f1f5f9';
-        if (row.status === 'Open') statusColor = '#fca5a5';
-        if (row.status === 'Pending') statusColor = '#fde047';
+        
+        // Determine color based on normalized status type (Open/Pending)
+        if (statusLower === 'open') statusColor = '#fca5a5';
+        else if (!statusLower.includes('closed')) statusColor = '#fde047'; // Pending color
 
         htmlBuffer += `
             <tr>
                 <td class="category-cell">${escapeHtml(row.category)}</td>
                 <td>${row.date}</td>
-                <td style="color: ${statusColor}; font-weight: 600;">${row.status}</td>
+                <td style="color: ${statusColor}; font-weight: 600;">${escapeHtml(row.status)}</td>
                 <td class="text-right">${row.count}</td>
             </tr>
         `;
