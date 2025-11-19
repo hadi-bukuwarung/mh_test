@@ -1,4 +1,4 @@
-real_category,Status,Channel,created_date,num_of_ticket
+real_category,Status,Channel,date,num_of_ticket
 Complaint::All Massive Issue,Closed,Chat,2025-11-18,64
 Complaint::All Massive Issue,Closed,Slack,2025-11-18,3
 Complaint::All Massive Issue,Open,Chat,2025-11-18,4
