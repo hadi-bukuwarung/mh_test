@@ -72,6 +72,19 @@ function setupEventListeners() {
         refreshCurrentView();
     });
 
+    document.getElementById('dashboard-date-picker').addEventListener('change', function(e) {
+        const selectedDate = e.target.value;
+        // Allow selecting any date even if not in set (might be empty day)
+        filters.date = selectedDate;
+        
+        // Update UI text
+        const [y, m, d] = selectedDate.split('-').map(Number);
+        const dateObj = new Date(y, m - 1, d);
+        document.getElementById('current-date').textContent = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        
+        updateTableForDate(selectedDate);
+    });
+
     const headers = document.querySelectorAll('#data-table th[data-sort]');
     headers.forEach(header => {
         header.addEventListener('click', function() {
@@ -138,7 +151,7 @@ function switchTab(tabName) {
 
     if (tabName === 'dashboard') {
         document.getElementById('view-dashboard').style.display = 'block';
-        renderTable(); 
+        if (filters.date) updateTableForDate(filters.date); 
     } else if (tabName === 'trends') {
         document.getElementById('view-trends').style.display = 'block';
         if (availableDates.length > 0) renderTrendTable();
@@ -207,7 +220,6 @@ function processAggregatedData(rows, headers) {
     };
 
     const catCol = findHeader('real_category');
-    // Enhanced Date Column Search to include 'Last Update Time' as requested
     const dateCol = findHeader('Created Time') || findHeader('created time') || findHeader('Last Update Time') || findHeader('date') || findHeader('Date') || findHeader('time');
     const countCol = findHeader('num_of_ticket');
     const channelCol = findHeader('channel') || findHeader('Channel');
@@ -215,8 +227,6 @@ function processAggregatedData(rows, headers) {
 
     if (!catCol) throw new Error(`Missing 'real_category' column.`);
     if (!dateCol) throw new Error(`Missing Date column.`);
-    // Check for num_of_ticket if we expect aggregated data
-    if (!countCol) console.warn("Warning: 'num_of_ticket' column not found. Assuming raw data (1 row = 1 ticket).");
 
     allRawRows = []; 
 
@@ -227,9 +237,8 @@ function processAggregatedData(rows, headers) {
         const dateStr = normalizeDate(row[dateCol]);
         const channel = channelCol ? (row[channelCol] || 'Unknown') : 'Unknown';
         const status = statusCol ? (row[statusCol] || 'Open') : 'Open';
-        
         let count = 1;
-        // CRITICAL FIX: Use num_of_ticket value if available
+
         if (countCol && row[countCol]) {
             const parsedCount = parseInt(row[countCol], 10);
             if (!isNaN(parsedCount)) {
@@ -237,7 +246,6 @@ function processAggregatedData(rows, headers) {
             }
         }
 
-        // FIX: Handle Missing Category by defaulting to 'Uncategorized'
         if (!category || category.trim() === '') {
             category = 'Uncategorized';
         }
@@ -271,6 +279,7 @@ function aggregateData() {
     allWeeklyData = {};
     let weeklySet = new Set();
     let totalTicketsLoaded = 0;
+    let rowsSkipped = 0;
 
     const getSunday = (d) => {
         const date = new Date(d);
@@ -292,21 +301,28 @@ function aggregateData() {
         const statusLower = row.status.toLowerCase();
         const isClosed = statusLower.includes('closed');
 
-        if (!includeClosed && isClosed) continue;
+        // Global Filter logic: if "non_closed", skip closed rows
+        if (!includeClosed && isClosed) {
+            rowsSkipped += row.count; // Count skipped tickets for debug
+            continue;
+        }
 
         const { category, date: dateStr, channel, count, status } = row;
 
         totalTicketsLoaded += count;
         allDatesSet.add(dateStr);
         
+        // Initialize or Sum Category Data
         if (!allCategoryData[category]) allCategoryData[category] = {};
         if (!allCategoryData[category][dateStr]) allCategoryData[category][dateStr] = 0;
-        allCategoryData[category][dateStr] += count;
+        allCategoryData[category][dateStr] += count; // SUMMING logic
 
+        // Initialize or Sum Channel Data
         if (!allChannelData[channel]) allChannelData[channel] = {};
         if (!allChannelData[channel][dateStr]) allChannelData[channel][dateStr] = 0;
         allChannelData[channel][dateStr] += count;
 
+        // Status Data
         if (!allStatusData[dateStr]) allStatusData[dateStr] = { total: 0, open: 0, pending: 0, closed: 0 };
         allStatusData[dateStr].total += count;
         
@@ -318,6 +334,7 @@ function aggregateData() {
         else if (normalizedStatus === 'Closed') allStatusData[dateStr].closed += count;
         else allStatusData[dateStr].pending += count;
 
+        // Weekly Data
         const [y, m, d] = dateStr.split('-').map(Number);
         const dateObj = new Date(y, m - 1, d);
         const sundayObj = getSunday(dateObj);
@@ -329,9 +346,13 @@ function aggregateData() {
         allWeeklyData[category][weekStr] += count;
     }
 
-    // Update Total Counter in Header
+    // Debug Info
     const totalEl = document.getElementById('total-count-display');
-    if (totalEl) totalEl.textContent = `Total Tickets: ${totalTicketsLoaded.toLocaleString()}`;
+    if (totalEl) {
+        const filterText = includeClosed ? "(All)" : "(Active Only)";
+        totalEl.textContent = `Tickets: ${totalTicketsLoaded.toLocaleString()} ${filterText}`;
+        // Optional: Warn if huge discrepancy
+    }
 
     availableDates = Array.from(allDatesSet).sort().reverse(); 
     availableWeeks = Array.from(weeklySet).sort().reverse();
@@ -345,9 +366,21 @@ function aggregateData() {
     populateFilterOptions('trend');
     populateFilterOptions('weekly');
 
-    const latestDate = availableDates[0];
-    filters.date = latestDate;
+    // Preserve selected date if valid, else default to latest
+    if (!filters.date || !allDatesSet.has(filters.date)) {
+        filters.date = availableDates[0];
+    }
+
+    const latestDate = filters.date;
     
+    // Update Date Picker Constraints
+    const datePicker = document.getElementById('dashboard-date-picker');
+    if (datePicker) {
+        datePicker.max = availableDates[0];
+        datePicker.min = availableDates[availableDates.length - 1];
+        datePicker.value = latestDate;
+    }
+
     try {
         const [y, m, d] = latestDate.split('-').map(Number);
         const dateObj = new Date(y, m - 1, d);
@@ -360,7 +393,7 @@ function aggregateData() {
     updateTableForDate(latestDate);
 }
 
-// ... (Rest of the file remains unchanged: updateStatusScorecard, renderStatusHealthTable, populateFilterOptions, updateSubcategoryOptions, getMetricsForDate, updateTableForDate, sortData, renderTable, renderAnomalyFeed, renderTrendTable, renderWeeklyTable, renderChannelTable, escapeHtml, createAnomalyBadge, showError) ...
+// ... (Rest of file same as before) ...
 
 function updateStatusScorecard(dateStr) {
     const stats = allStatusData[dateStr] || { total: 0, open: 0, pending: 0, closed: 0 };
@@ -558,7 +591,7 @@ function renderTable() {
 
 function renderAnomalyFeed() {
     const tbody = document.getElementById('feed-table-body');
-    const historyWindow = 14;
+    const historyWindow = 60; // Set to 60 to catch 2025-10-20
     if (availableDates.length === 0) return;
     const dates = availableDates.slice(0, historyWindow); 
     const allAnomalies = []; 
@@ -570,7 +603,7 @@ function renderAnomalyFeed() {
         });
     });
     if (allAnomalies.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding: 2rem; color: #64748b;">No high anomalies detected in the last 14 days.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding: 2rem; color: #64748b;">No high anomalies detected in the last 60 days.</td></tr>';
         return;
     }
     allAnomalies.sort((a, b) => {
