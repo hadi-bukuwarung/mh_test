@@ -34,6 +34,7 @@ Complaint::Application::OTP Issue,Closed,Chat,2025-11-11,1
 Complaint::Application::OTP Issue,Closed,Chat,2025-11-15,1
 Complaint::Application::OTP Issue,Closed,Chat,2025-11-17,1
 Complaint::Application::OTP Issue,Closed,Chat,2025-11-19,4
+Complaint::Application::OTP Issue,Closed,Chat,2025-11-20,1
 Complaint::Application::OTP Issue,Closed,Slack,2025-09-22,1
 Complaint::Application::OTP Issue,Closed,Slack,2025-09-24,2
 Complaint::Application::OTP Issue,Closed,Slack,2025-09-25,1
@@ -56,11 +57,10 @@ Complaint::Application::OTP Issue,Closed,Slack,2025-11-06,3
 Complaint::Application::OTP Issue,Closed,Slack,2025-11-09,1
 Complaint::Application::OTP Issue,Closed,Slack,2025-11-13,1
 Complaint::Application::OTP Issue,Closed,Slack,2025-11-18,5
-Complaint::Application::OTP Issue,Closed,Slack,2025-11-19,2
+Complaint::Application::OTP Issue,Closed,Slack,2025-11-19,3
 Complaint::Application::OTP Issue,Closed,Slack,2025-11-20,1
 Complaint::Application::OTP Issue,NOBU FU,Slack,2025-11-19,1
 Complaint::Application::OTP Issue,Waiting for Merchant Reply,Slack,2025-11-18,1
-Complaint::Application::OTP Issue,Waiting for Merchant Reply,Slack,2025-11-19,1
 Complaint::Application::OTP Issue,Waiting for Merchant Reply,Slack,2025-11-20,1
 Complaint::Application::Purchase Issue,Closed,Chat,2025-09-20,1
 Complaint::Application::Purchase Issue,Closed,Chat,2025-09-24,2
@@ -597,6 +597,7 @@ Complaint::BukuWarung App::Fraud,Closed,Web,2025-10-29,2
 Complaint::BukuWarung App::Fraud,Closed,Web,2025-11-08,1
 Complaint::BukuWarung App::Fraud,Closed,Web,2025-11-12,1
 Complaint::BukuWarung App::Fraud,Closed,Web,2025-11-18,1
+Complaint::BukuWarung App::Fraud,Risk FU,Chat,2025-11-20,1
 Complaint::BukuWarung App::Fraud Cases,Closed,Chat,2025-08-20,1
 Complaint::BukuWarung App::Fraud Cases,Closed,Chat,2025-08-21,6
 Complaint::BukuWarung App::Fraud Cases,Closed,Chat,2025-08-23,3
@@ -680,7 +681,6 @@ Complaint::BukuWarung App::Geng Juragan Untung Issue,Closed,Chat,2025-10-10,1
 Complaint::BukuWarung App::Geng Juragan Untung Issue,Closed,Chat,2025-10-16,1
 Complaint::BukuWarung App::Geng Juragan Untung Issue,Closed,Chat,2025-10-27,1
 Complaint::BukuWarung App::Inventory Management,Closed,Chat,2025-09-16,1
-Complaint::BukuWarung App::KYC Rejected,Backend on Call FU,Chat,2025-11-19,1
 Complaint::BukuWarung App::KYC Rejected,Closed,Chat,2025-08-20,3
 Complaint::BukuWarung App::KYC Rejected,Closed,Chat,2025-08-22,1
 Complaint::BukuWarung App::KYC Rejected,Closed,Chat,2025-08-23,2
@@ -830,6 +830,7 @@ Complaint::BukuWarung App::KYC Rejected,Closed,Web,2025-09-17,1
 Complaint::BukuWarung App::KYC Rejected,Closed,Web,2025-09-19,2
 Complaint::BukuWarung App::KYC Rejected,Closed,Web,2025-09-22,1
 Complaint::BukuWarung App::KYC Rejected,Closed,Web,2025-09-30,1
+Complaint::BukuWarung App::KYC Rejected,MHE FU,Chat,2025-11-19,1
 Complaint::BukuWarung App::KYC Rejected,Waiting for partner reply,Slack,2025-11-20,1
 Complaint::BukuWarung App::KYC Unable To Process,Closed,Chat,2025-08-22,2
 Complaint::BukuWarung App::KYC Unable To Process,Closed,Chat,2025-08-23,1
@@ -878,10 +879,10 @@ Complaint::BukuWarung App::KYC Unable To Process,Closed,Slack,2025-10-22,1
 Complaint::BukuWarung App::KYC Unable To Process,Closed,Slack,2025-10-26,1
 Complaint::BukuWarung App::KYC Unable To Process,Closed,Slack,2025-10-31,1
 Complaint::BukuWarung App::KYC Unable To Process,Closed,Slack,2025-11-16,1
+Complaint::BukuWarung App::KYC Unable To Process,Closed,Slack,2025-11-19,1
 Complaint::BukuWarung App::KYC Unable To Process,Closed,Web,2025-09-25,1
 Complaint::BukuWarung App::KYC Unable To Process,Closed,Web,2025-11-01,1
 Complaint::BukuWarung App::KYC Unable To Process,MVT FU,Chat,2025-11-20,1
-Complaint::BukuWarung App::KYC Unable To Process,MVT FU,Slack,2025-11-19,1
 Complaint::BukuWarung App::KYC Unable To Process,Risk FU,Slack,2025-11-20,1
 Complaint::BukuWarung App::Kelola Stok,Closed,Chat,2025-11-04,1
 Complaint::BukuWarung App::Kelola Stok,Closed,Chat,2025-11-13,1
@@ -1155,6 +1156,7 @@ Complaint::BukuWarung App::OTP Not Received,Closed,Slack,2025-11-07,1
 Complaint::BukuWarung App::OTP Not Received,Closed,Slack,2025-11-09,1
 Complaint::BukuWarung App::OTP Not Received,Closed,Slack,2025-11-10,1
 Complaint::BukuWarung App::OTP Not Received,Closed,Slack,2025-11-16,1
+Complaint::BukuWarung App::OTP Not Received,Closed,Slack,2025-11-20,1
 Complaint::BukuWarung App::OTP Not Received,Closed,Web,2025-09-19,2
 Complaint::BukuWarung App::OTP Not Received,Closed,Web,2025-11-15,1
 Complaint::BukuWarung App::Other,Closed,Chat,2025-08-21,5
@@ -1314,6 +1316,7 @@ Complaint::BukuWarung App::Unable To Add Bank Account,Closed,Chat,2025-11-08,1
 Complaint::BukuWarung App::Unable To Add Bank Account,Closed,Chat,2025-11-10,2
 Complaint::BukuWarung App::Unable To Add Bank Account,Closed,Chat,2025-11-16,1
 Complaint::BukuWarung App::Unable To Add Bank Account,Closed,Chat,2025-11-17,2
+Complaint::BukuWarung App::Unable To Add Bank Account,Closed,Chat,2025-11-20,1
 Complaint::BukuWarung App::Unable To Add Bank Account,Closed,Email,2025-08-23,1
 Complaint::BukuWarung App::Unable To Add Bank Account,Closed,Email,2025-08-31,1
 Complaint::BukuWarung App::Unable To Add Bank Account,Closed,Email,2025-09-01,2
@@ -1392,12 +1395,12 @@ Complaint::BukuWarung App::Unable To Add Bank Account,Closed,Slack,2025-11-13,1
 Complaint::BukuWarung App::Unable To Add Bank Account,Closed,Slack,2025-11-14,2
 Complaint::BukuWarung App::Unable To Add Bank Account,Closed,Slack,2025-11-17,4
 Complaint::BukuWarung App::Unable To Add Bank Account,Closed,Slack,2025-11-18,1
+Complaint::BukuWarung App::Unable To Add Bank Account,Closed,Slack,2025-11-19,1
 Complaint::BukuWarung App::Unable To Add Bank Account,Closed,Web,2025-08-22,3
 Complaint::BukuWarung App::Unable To Add Bank Account,Closed,Web,2025-09-14,1
 Complaint::BukuWarung App::Unable To Add Bank Account,Closed,Web,2025-09-16,1
 Complaint::BukuWarung App::Unable To Add Bank Account,Closed,Web,2025-10-02,1
 Complaint::BukuWarung App::Unable To Add Bank Account,Closed,Web,2025-10-13,1
-Complaint::BukuWarung App::Unable To Add Bank Account,Waiting for Merchant Reply,Slack,2025-11-19,1
 Complaint::BukuWarung App::Unable To Change Logo,Closed,Chat,2025-09-03,1
 Complaint::BukuWarung App::Unable To Change Logo,Closed,Chat,2025-09-06,1
 Complaint::BukuWarung App::Unable To Change Logo,Closed,Chat,2025-09-09,1
@@ -1562,7 +1565,7 @@ Complaint::BukuWarung App::Unable To Login,Closed,Email,2025-10-20,1
 Complaint::BukuWarung App::Unable To Login,Closed,Email,2025-10-27,1
 Complaint::BukuWarung App::Unable To Login,Closed,Email,2025-10-29,1
 Complaint::BukuWarung App::Unable To Login,Closed,Email,2025-11-05,1
-Complaint::BukuWarung App::Unable To Login,Closed,Email,2025-11-18,6
+Complaint::BukuWarung App::Unable To Login,Closed,Email,2025-11-18,7
 Complaint::BukuWarung App::Unable To Login,Closed,Instagram,2025-10-07,2
 Complaint::BukuWarung App::Unable To Login,Closed,Slack,2025-10-07,2
 Complaint::BukuWarung App::Unable To Login,Closed,Slack,2025-10-08,1
@@ -1586,7 +1589,8 @@ Complaint::BukuWarung App::Unable To Login,Closed,Slack,2025-11-10,1
 Complaint::BukuWarung App::Unable To Login,Closed,Slack,2025-11-12,1
 Complaint::BukuWarung App::Unable To Login,Closed,Slack,2025-11-19,1
 Complaint::BukuWarung App::Unable To Login,Engineer Android FU,Chat,2025-11-14,1
-Complaint::BukuWarung App::Unable To Login,Waiting for Merchant Reply,Email,2025-11-18,2
+Complaint::BukuWarung App::Unable To Login,Waiting for Merchant Reply,Email,2025-11-18,1
+Complaint::BukuWarung App::Unable To Login,Waiting for Merchant Reply,Slack,2025-11-20,1
 Complaint::BukuWarung App::Unable To Login Bug,Closed,Chat,2025-08-23,1
 Complaint::BukuWarung App::Unable To Login Bug,Closed,Chat,2025-08-26,1
 Complaint::BukuWarung App::Unable To Login Bug,Closed,Chat,2025-08-27,1
@@ -1756,13 +1760,14 @@ Complaint::Delivery::Delivery Issue (Delayed Shipping),Closed,Slack,2025-10-28,6
 Complaint::Delivery::Delivery Issue (Delayed Shipping),Closed,Slack,2025-10-29,2
 Complaint::Delivery::Delivery Issue (Delayed Shipping),Closed,Slack,2025-11-01,4
 Complaint::Delivery::Delivery Issue (Delayed Shipping),Closed,Slack,2025-11-04,1
-Complaint::Delivery::Delivery Issue (Expedition Issue),Business FU,Chat,2025-10-22,1
+Complaint::Delivery::Delivery Issue (Delayed Shipping),Operation Outbound FU,Chat,2025-11-20,1
 Complaint::Delivery::Delivery Issue (Expedition Issue),Closed,Chat,2025-09-16,1
 Complaint::Delivery::Delivery Issue (Expedition Issue),Closed,Chat,2025-10-05,1
 Complaint::Delivery::Delivery Issue (Expedition Issue),Closed,Chat,2025-10-15,1
 Complaint::Delivery::Delivery Issue (Expedition Issue),Closed,Chat,2025-10-18,1
 Complaint::Delivery::Delivery Issue (Expedition Issue),Closed,Chat,2025-10-20,1
 Complaint::Delivery::Delivery Issue (Expedition Issue),Closed,Chat,2025-10-21,1
+Complaint::Delivery::Delivery Issue (Expedition Issue),Closed,Chat,2025-10-22,1
 Complaint::Delivery::Delivery Issue (Expedition Issue),Closed,Chat,2025-10-23,1
 Complaint::Delivery::Delivery Issue (Expedition Issue),Closed,Chat,2025-10-29,1
 Complaint::Delivery::Delivery Issue (Expedition Issue),Closed,Chat,2025-10-31,2
@@ -1896,6 +1901,7 @@ Complaint::Delivery::Delivery Issue (Wrong Device Sent),Closed,Slack,2025-11-11,
 Complaint::Delivery::Delivery Issue (Wrong Device Sent),Closed,Slack,2025-11-12,1
 Complaint::Delivery::Delivery Issue (Wrong Device Sent),Operation Inbound FU,Chat,2025-11-17,1
 Complaint::Delivery::Delivery Issue (Wrong Device Sent),Operation Inbound FU,Slack,2025-11-20,1
+Complaint::Delivery::Delivery Issue (Wrong Device Sent),Waiting for Merchant Reply,Slack,2025-11-20,2
 Complaint::Device::Mapping Issue,Closed,Chat,2025-09-15,3
 Complaint::Device::Mapping Issue,Closed,Chat,2025-09-19,1
 Complaint::Device::Mapping Issue,Closed,Chat,2025-09-20,2
@@ -1994,6 +2000,7 @@ Complaint::DigiPay::Digipay Not Record,Closed,Slack,2025-11-05,1
 Complaint::DigiPay::Digipay Not Record,Closed,Slack,2025-11-07,1
 Complaint::DigiPay::Digipay Not Record,Closed,Slack,2025-11-17,1
 Complaint::DigiPay::Digipay Not Record,Closed,Slack,2025-11-18,1
+Complaint::DigiPay::Digipay Not Record,Waiting for Merchant Reply,Slack,2025-11-20,1
 Complaint::DigiPay::Double Deduction,Closed,Slack,2025-11-08,1
 Complaint::DigiPay::Double Disbursement,Closed,Chat,2025-09-20,1
 Complaint::DigiPay::Double Disbursement,Closed,Instagram,2025-09-21,1
@@ -2177,10 +2184,8 @@ Complaint::DigiPay::Other Issues,Closed,Slack,2025-09-16,1
 Complaint::DigiPay::Other Issues,Closed,Slack,2025-09-17,1
 Complaint::DigiPay::Other Issues,Closed,Slack,2025-09-21,1
 Complaint::DigiPay::Other Issues,Closed,Slack,2025-09-30,1
-Complaint::DigiPay::Pending Transaction,BP BDI FU,Chat,2025-11-19,1
-Complaint::DigiPay::Pending Transaction,BP BDI FU,Slack,2025-11-19,4
-Complaint::DigiPay::Pending Transaction,Backend on Call FU,Chat,2025-11-17,1
-Complaint::DigiPay::Pending Transaction,Backend on Call FU,Slack,2025-11-17,1
+Complaint::DigiPay::Pending Transaction,BP BDI FU,Slack,2025-11-19,2
+Complaint::DigiPay::Pending Transaction,BP DOKU FU,Slack,2025-11-20,1
 Complaint::DigiPay::Pending Transaction,Closed,Chat,2025-08-20,25
 Complaint::DigiPay::Pending Transaction,Closed,Chat,2025-08-21,14
 Complaint::DigiPay::Pending Transaction,Closed,Chat,2025-08-22,13
@@ -2271,8 +2276,8 @@ Complaint::DigiPay::Pending Transaction,Closed,Chat,2025-11-15,13
 Complaint::DigiPay::Pending Transaction,Closed,Chat,2025-11-16,12
 Complaint::DigiPay::Pending Transaction,Closed,Chat,2025-11-17,19
 Complaint::DigiPay::Pending Transaction,Closed,Chat,2025-11-18,13
-Complaint::DigiPay::Pending Transaction,Closed,Chat,2025-11-19,7
-Complaint::DigiPay::Pending Transaction,Closed,Chat,2025-11-20,2
+Complaint::DigiPay::Pending Transaction,Closed,Chat,2025-11-19,8
+Complaint::DigiPay::Pending Transaction,Closed,Chat,2025-11-20,3
 Complaint::DigiPay::Pending Transaction,Closed,Email,2025-08-20,1
 Complaint::DigiPay::Pending Transaction,Closed,Email,2025-08-26,1
 Complaint::DigiPay::Pending Transaction,Closed,Email,2025-11-11,1
@@ -2413,9 +2418,9 @@ Complaint::DigiPay::Pending Transaction,Closed,Slack,2025-11-13,6
 Complaint::DigiPay::Pending Transaction,Closed,Slack,2025-11-14,11
 Complaint::DigiPay::Pending Transaction,Closed,Slack,2025-11-15,9
 Complaint::DigiPay::Pending Transaction,Closed,Slack,2025-11-16,10
-Complaint::DigiPay::Pending Transaction,Closed,Slack,2025-11-17,14
+Complaint::DigiPay::Pending Transaction,Closed,Slack,2025-11-17,15
 Complaint::DigiPay::Pending Transaction,Closed,Slack,2025-11-18,14
-Complaint::DigiPay::Pending Transaction,Closed,Slack,2025-11-19,9
+Complaint::DigiPay::Pending Transaction,Closed,Slack,2025-11-19,12
 Complaint::DigiPay::Pending Transaction,Closed,Web,2025-08-20,1
 Complaint::DigiPay::Pending Transaction,Closed,Web,2025-08-29,1
 Complaint::DigiPay::Pending Transaction,Closed,Web,2025-09-02,1
@@ -2423,8 +2428,8 @@ Complaint::DigiPay::Pending Transaction,Closed,Web,2025-09-16,1
 Complaint::DigiPay::Pending Transaction,Closed,Web,2025-10-15,2
 Complaint::DigiPay::Pending Transaction,Closed,Web,2025-10-19,1
 Complaint::DigiPay::Pending Transaction,Closed,Web,2025-10-20,1
+Complaint::DigiPay::Pending Transaction,Helpdesk FU,Chat,2025-11-17,1
 Complaint::DigiPay::Pending Transaction,Helpdesk FU,Chat,2025-11-20,1
-Complaint::DigiPay::Pending Transaction,Waiting for Merchant Reply,Slack,2025-11-19,1
 Complaint::DigiPay::Refund Issue,Closed,Chat,2025-10-17,1
 Complaint::DigiPay::Refund Issue,Closed,Chat,2025-10-20,2
 Complaint::DigiPay::Refund Issue,Closed,Chat,2025-10-30,1
@@ -2502,7 +2507,7 @@ Complaint::DigiPay::Success But Not Received,Closed,Chat,2025-11-15,4
 Complaint::DigiPay::Success But Not Received,Closed,Chat,2025-11-16,1
 Complaint::DigiPay::Success But Not Received,Closed,Chat,2025-11-17,1
 Complaint::DigiPay::Success But Not Received,Closed,Chat,2025-11-19,2
-Complaint::DigiPay::Success But Not Received,Closed,Chat,2025-11-20,1
+Complaint::DigiPay::Success But Not Received,Closed,Chat,2025-11-20,2
 Complaint::DigiPay::Success But Not Received,Closed,Instagram,2025-08-26,1
 Complaint::DigiPay::Success But Not Received,Closed,Instagram,2025-09-02,4
 Complaint::DigiPay::Success But Not Received,Closed,Instagram,2025-09-03,1
@@ -2855,7 +2860,7 @@ Complaint::EDC Saku::Activation Issue (Usability),Closed,Slack,2025-11-15,1
 Complaint::EDC Saku::Activation Issue (Usability),Closed,Slack,2025-11-16,1
 Complaint::EDC Saku::Activation Issue (Usability),Closed,Slack,2025-11-17,5
 Complaint::EDC Saku::Activation Issue (Usability),Closed,Slack,2025-11-18,8
-Complaint::EDC Saku::Activation Issue (Usability),Closed,Slack,2025-11-19,15
+Complaint::EDC Saku::Activation Issue (Usability),Closed,Slack,2025-11-19,16
 Complaint::EDC Saku::Activation Issue (Usability),Closed,Slack,2025-11-20,1
 Complaint::EDC Saku::Activation Issue (Usability),Closed,Web,2025-08-29,1
 Complaint::EDC Saku::Activation Issue (Usability),Closed,Web,2025-09-01,6
@@ -2867,11 +2872,11 @@ Complaint::EDC Saku::Activation Issue (Usability),Closed,Web,2025-09-13,3
 Complaint::EDC Saku::Activation Issue (Usability),Closed,Web,2025-09-22,1
 Complaint::EDC Saku::Activation Issue (Usability),Closed,Web,2025-09-29,1
 Complaint::EDC Saku::Activation Issue (Usability),Closed,Web,2025-11-14,1
-Complaint::EDC Saku::Activation Issue (Usability),Helpdesk FU,Slack,2025-11-19,1
 Complaint::EDC Saku::Activation Issue (Usability),Operation Activation FU,Slack,2025-11-19,2
-Complaint::EDC Saku::Activation Issue (Usability),Operation Activation FU,Slack,2025-11-20,5
+Complaint::EDC Saku::Activation Issue (Usability),Operation Activation FU,Slack,2025-11-20,6
 Complaint::EDC Saku::Activation Issue (Usability),Waiting for partner reply,Slack,2025-11-17,1
 Complaint::EDC Saku::Activation Issue (Usability),Waiting for partner reply,Slack,2025-11-18,1
+Complaint::EDC Saku::Activation Issue (Usability),Waiting for partner reply,Slack,2025-11-20,1
 Complaint::EDC Saku::Activation Issue Already Active (Usability),Closed,Chat,2025-08-26,1
 Complaint::EDC Saku::Activation Issue Already Active (Usability),Closed,Chat,2025-08-28,1
 Complaint::EDC Saku::Activation Issue Already Active (Usability),Closed,Chat,2025-08-30,2
@@ -4401,6 +4406,7 @@ Complaint::EDC Saku::Unable to Login BukuAgen OTP Issue (System/Transaction),Clo
 Complaint::EDC Saku::Unable to Login BukuAgen OTP Issue (System/Transaction),Closed,Slack,2025-10-31,1
 Complaint::EDC Saku::Unable to Login BukuAgen OTP Issue (System/Transaction),Closed,Slack,2025-11-08,1
 Complaint::EDC Saku::Unable to Login BukuAgen OTP Issue (System/Transaction),Closed,Slack,2025-11-19,1
+Complaint::EDC Saku::Unable to Login BukuAgen OTP Issue (System/Transaction),Waiting for partner reply,Slack,2025-11-20,1
 Complaint::EDC Saku::Unable to Power On/Off (Hardware),Closed,Chat,2025-09-03,1
 Complaint::EDC Saku::Unable to Power On/Off (Hardware),Closed,Chat,2025-09-05,1
 Complaint::EDC Saku::Unable to Power On/Off (Hardware),Closed,Chat,2025-09-26,1
@@ -4544,6 +4550,7 @@ Complaint::EDC Saku::Unable to Use Chip Card (System/Transaction),Closed,Web,202
 Complaint::EDC Saku::Unable to Use Chip Card (System/Transaction),Closed,Web,2025-09-04,1
 Complaint::EDC Saku::Unable to Use Chip Card (System/Transaction),Closed,Web,2025-09-28,1
 Complaint::EDC Saku::Unable to Use Chip Card (System/Transaction),Waiting for partner reply,Slack,2025-11-14,1
+Complaint::EDC Saku::Unable to Use Chip Card (System/Transaction),Waiting for partner reply,Slack,2025-11-20,1
 Complaint::EDC Saku::Unable to Use Swipe Magnetic Card (System/Transaction),Closed,Chat,2025-08-20,15
 Complaint::EDC Saku::Unable to Use Swipe Magnetic Card (System/Transaction),Closed,Chat,2025-08-21,6
 Complaint::EDC Saku::Unable to Use Swipe Magnetic Card (System/Transaction),Closed,Chat,2025-08-22,12
@@ -4850,7 +4857,7 @@ Complaint::EDC::Activation Issue Already Active,Closed,Slack,2025-11-11,2
 Complaint::EDC::Activation Issue Already Active,Closed,Slack,2025-11-12,1
 Complaint::EDC::Activation Issue Already Active,Closed,Slack,2025-11-13,2
 Complaint::EDC::Activation Issue Already Active,Closed,Slack,2025-11-15,1
-Complaint::EDC::Activation Issue Already Active,Waiting for Merchant Reply,Slack,2025-11-19,1
+Complaint::EDC::Activation Issue Already Active,Closed,Slack,2025-11-19,1
 Complaint::EDC::Activation Issue OTS,Closed,Chat,2025-10-06,1
 Complaint::EDC::Activation Issue OTS,Closed,Chat,2025-10-23,2
 Complaint::EDC::Activation Issue OTS,Closed,Chat,2025-10-28,1
@@ -4894,8 +4901,7 @@ Complaint::EDC::Activation Issue OTS,Closed,Slack,2025-11-15,4
 Complaint::EDC::Activation Issue OTS,Closed,Slack,2025-11-16,1
 Complaint::EDC::Activation Issue OTS,Closed,Slack,2025-11-17,12
 Complaint::EDC::Activation Issue OTS,Closed,Slack,2025-11-18,6
-Complaint::EDC::Activation Issue OTS,Closed,Slack,2025-11-19,4
-Complaint::EDC::Activation Issue OTS,Waiting for Merchant Reply,Slack,2025-11-19,1
+Complaint::EDC::Activation Issue OTS,Closed,Slack,2025-11-19,5
 Complaint::EDC::Activation Issue Replacement,Closed,Chat,2025-09-16,1
 Complaint::EDC::Activation Issue Replacement,Closed,Chat,2025-10-25,4
 Complaint::EDC::Activation Issue Replacement,Closed,Chat,2025-10-26,1
@@ -4972,7 +4978,7 @@ Complaint::EDC::Authentication Error TMK,Closed,Slack,2025-10-28,1
 Complaint::EDC::Authentication Error TMK,Closed,Slack,2025-10-29,1
 Complaint::EDC::Authentication Error TMK,Closed,Slack,2025-10-31,1
 Complaint::EDC::Authentication Error TMK,Closed,Slack,2025-11-03,1
-Complaint::EDC::Authentication Error TMK,Operation Activation FU,Chat,2025-11-20,1
+Complaint::EDC::Authentication Error TMK,Operation Activation FU,Chat,2025-11-20,2
 Complaint::EDC::Authentication Error TMK,Operation Activation FU,Slack,2025-11-12,1
 Complaint::EDC::Authentication Error TMK,Operation Activation FU,Slack,2025-11-19,1
 Complaint::EDC::Big Merchant Issue,Closed,Chat,2025-10-09,3
@@ -5049,9 +5055,8 @@ Complaint::EDC::Bluetooth X,Closed,Slack,2025-11-08,5
 Complaint::EDC::Bluetooth X,Closed,Slack,2025-11-10,2
 Complaint::EDC::Bluetooth X,Closed,Slack,2025-11-15,1
 Complaint::EDC::Bluetooth X,Closed,Slack,2025-11-17,4
-Complaint::EDC::Bluetooth X,Closed,Slack,2025-11-19,1
+Complaint::EDC::Bluetooth X,Closed,Slack,2025-11-19,2
 Complaint::EDC::Bluetooth X,Closed,Web,2025-11-14,1
-Complaint::EDC::Bluetooth X,Waiting for Merchant Reply,Slack,2025-11-19,1
 Complaint::EDC::Bluetooth X,Waiting for Merchant Reply,Slack,2025-11-20,1
 Complaint::EDC::BukuAgen App Not Show,Closed,Chat,2025-11-04,2
 Complaint::EDC::BukuAgen App Not Show,Closed,Chat,2025-11-16,1
@@ -5159,7 +5164,7 @@ Complaint::EDC::BukuAgen Keeps Loading,Closed,Slack,2025-11-11,1
 Complaint::EDC::BukuAgen Keeps Loading,Closed,Slack,2025-11-12,1
 Complaint::EDC::BukuAgen Keeps Loading,Closed,Slack,2025-11-13,2
 Complaint::EDC::BukuAgen Keeps Loading,Closed,Slack,2025-11-15,1
-Complaint::EDC::BukuAgen Keeps Loading,Helpdesk FU,Chat,2025-11-18,1
+Complaint::EDC::BukuAgen Keeps Loading,Waiting for Merchant Reply,Chat,2025-11-18,1
 Complaint::EDC::Business Name Not Show,Closed,Email,2025-11-13,1
 Complaint::EDC::Buttons Not Working,Closed,Chat,2025-11-07,1
 Complaint::EDC::Buttons Not Working,Closed,Email,2025-11-01,1
@@ -5203,9 +5208,9 @@ Complaint::EDC::Charger/Battery Issue,Closed,Slack,2025-11-08,2
 Complaint::EDC::Charger/Battery Issue,Closed,Slack,2025-11-11,1
 Complaint::EDC::Charger/Battery Issue,Closed,Slack,2025-11-13,1
 Complaint::EDC::Charger/Battery Issue,Closed,Slack,2025-11-16,1
+Complaint::EDC::Charger/Battery Issue,Closed,Slack,2025-11-18,1
+Complaint::EDC::Charger/Battery Issue,Closed,Slack,2025-11-19,2
 Complaint::EDC::Charger/Battery Issue,Closed,Web,2025-11-10,1
-Complaint::EDC::Charger/Battery Issue,Waiting for Merchant Reply,Slack,2025-11-18,1
-Complaint::EDC::Charger/Battery Issue,Waiting for Merchant Reply,Slack,2025-11-19,2
 Complaint::EDC::Charger/Battery Issue,Waiting for Merchant Reply,Slack,2025-11-20,1
 Complaint::EDC::Claim Banner Issue,Closed,Chat,2025-10-20,1
 Complaint::EDC::Claim Banner Issue,Closed,Chat,2025-10-30,1
@@ -5666,7 +5671,6 @@ Complaint::EDC::Komisi Agen Not Received,Closed,Slack,2025-11-03,1
 Complaint::EDC::Komisi Agen Not Received,Closed,Slack,2025-11-07,1
 Complaint::EDC::Komisi Agen Not Received,Closed,Slack,2025-11-14,1
 Complaint::EDC::Komisi Agen Not Received,Closed,Slack,2025-11-18,1
-Complaint::EDC::Komisi Agen Withdrawl Issue,Backend on Call FU,Chat,2025-11-15,1
 Complaint::EDC::Komisi Agen Withdrawl Issue,Backend on Call FU,Chat,2025-11-20,1
 Complaint::EDC::Komisi Agen Withdrawl Issue,Closed,Chat,2025-10-05,2
 Complaint::EDC::Komisi Agen Withdrawl Issue,Closed,Chat,2025-10-06,2
@@ -5701,8 +5705,10 @@ Complaint::EDC::Komisi Agen Withdrawl Issue,Closed,Slack,2025-10-13,1
 Complaint::EDC::Komisi Agen Withdrawl Issue,Closed,Slack,2025-10-25,1
 Complaint::EDC::Komisi Agen Withdrawl Issue,Closed,Slack,2025-10-27,1
 Complaint::EDC::Komisi Agen Withdrawl Issue,Closed,Slack,2025-11-13,1
+Complaint::EDC::Komisi Agen Withdrawl Issue,Closed,Slack,2025-11-19,1
 Complaint::EDC::Komisi Agen Withdrawl Issue,Closed,Web,2025-11-17,1
-Complaint::EDC::Komisi Agen Withdrawl Issue,Waiting for Merchant Reply,Slack,2025-11-19,2
+Complaint::EDC::Komisi Agen Withdrawl Issue,Engineer Android FU,Chat,2025-11-15,1
+Complaint::EDC::Komisi Agen Withdrawl Issue,Waiting for Merchant Reply,Slack,2025-11-19,1
 Complaint::EDC::LCD Issue,Closed,Chat,2025-10-18,1
 Complaint::EDC::LCD Issue,Closed,Chat,2025-10-19,1
 Complaint::EDC::LCD Issue,Closed,Chat,2025-10-22,5
@@ -5751,12 +5757,11 @@ Complaint::EDC::LCD Issue,Closed,Slack,2025-11-13,1
 Complaint::EDC::LCD Issue,Closed,Slack,2025-11-14,3
 Complaint::EDC::LCD Issue,Closed,Slack,2025-11-15,2
 Complaint::EDC::LCD Issue,Closed,Slack,2025-11-17,3
-Complaint::EDC::LCD Issue,Closed,Slack,2025-11-18,2
+Complaint::EDC::LCD Issue,Closed,Slack,2025-11-18,3
 Complaint::EDC::LCD Issue,Closed,Slack,2025-11-19,2
-Complaint::EDC::LCD Issue,Operation Inbound FU,Slack,2025-11-19,1
+Complaint::EDC::LCD Issue,Operation Inbound FU,Slack,2025-11-19,3
 Complaint::EDC::LCD Issue,Operation Inbound FU,Slack,2025-11-20,1
-Complaint::EDC::LCD Issue,Waiting for Merchant Reply,Slack,2025-11-18,1
-Complaint::EDC::LCD Issue,Waiting for Merchant Reply,Slack,2025-11-19,3
+Complaint::EDC::LCD Issue,Waiting for Merchant Reply,Slack,2025-11-19,1
 Complaint::EDC::LCD Issue,Waiting for Merchant Reply,Slack,2025-11-20,1
 Complaint::EDC::Missmatch Data Info,Closed,Chat,2025-10-08,1
 Complaint::EDC::Missmatch Data Info,Closed,Chat,2025-11-06,1
@@ -5832,9 +5837,8 @@ Complaint::EDC::Missmatch Data Mapping,Closed,Slack,2025-11-16,1
 Complaint::EDC::Missmatch Data Mapping,Closed,Slack,2025-11-17,6
 Complaint::EDC::Missmatch Data Mapping,Closed,Slack,2025-11-19,2
 Complaint::EDC::Missmatch Data Mapping,Closed,Web,2025-11-12,1
-Complaint::EDC::Missmatch Data Mapping,Operation Activation FU,Slack,2025-11-19,2
+Complaint::EDC::Missmatch Data Mapping,Operation Activation FU,Slack,2025-11-19,3
 Complaint::EDC::Missmatch Data Mapping,Operation Outbound FU,Slack,2025-11-19,1
-Complaint::EDC::Missmatch Data Mapping,Waiting for Merchant Reply,Slack,2025-11-19,1
 Complaint::EDC::No BukuAgen in Play Store,Closed,Slack,2025-11-04,1
 Complaint::EDC::OTP Issue,Closed,Chat,2025-10-09,1
 Complaint::EDC::OTP Issue,Closed,Chat,2025-10-15,1
@@ -5955,6 +5959,7 @@ Complaint::EDC::Purchase Issue on App,Closed,Web,2025-10-22,1
 Complaint::EDC::Purchase Issue on App,Closed,Web,2025-11-08,1
 Complaint::EDC::Purchase Issue on App,Closed,Web,2025-11-11,1
 Complaint::EDC::Purchase Issue on App,Closed,Web,2025-11-17,1
+Complaint::EDC::Purchase Issue on App,Waiting for Merchant Reply,Slack,2025-11-20,1
 Complaint::EDC::Purchase KYB Issue,Closed,Chat,2025-10-06,4
 Complaint::EDC::Purchase KYB Issue,Closed,Chat,2025-10-07,4
 Complaint::EDC::Purchase KYB Issue,Closed,Chat,2025-10-08,3
@@ -5995,7 +6000,7 @@ Complaint::EDC::Purchase KYB Issue,Closed,Slack,2025-11-14,2
 Complaint::EDC::Purchase KYB Issue,Closed,Slack,2025-11-15,1
 Complaint::EDC::Purchase KYB Issue,Closed,Web,2025-11-14,1
 Complaint::EDC::Purchase KYB Issue,MVT FU,Slack,2025-11-20,1
-Complaint::EDC::Purchase KYB Issue,Risk FU,Slack,2025-11-18,1
+Complaint::EDC::Purchase KYB Issue,Operation Activation FU,Slack,2025-11-18,1
 Complaint::EDC::Receipt/Struk Issue,Closed,Chat,2025-10-05,1
 Complaint::EDC::Receipt/Struk Issue,Closed,Chat,2025-10-06,1
 Complaint::EDC::Receipt/Struk Issue,Closed,Chat,2025-10-07,4
@@ -6224,6 +6229,7 @@ Complaint::EDC::Saldo Failed to Load Issue,Closed,Slack,2025-10-13,1
 Complaint::EDC::Saldo Failed to Load Issue,Closed,Slack,2025-10-19,1
 Complaint::EDC::Saldo Failed to Load Issue,Closed,Slack,2025-11-07,1
 Complaint::EDC::Saldo Failed to Load Issue,Closed,Slack,2025-11-14,2
+Complaint::EDC::Security Risk Lock Issue,Closed,Chat,2025-09-13,1
 Complaint::EDC::Security Risk Lock Issue,Closed,Chat,2025-10-12,1
 Complaint::EDC::Security Risk Lock Issue,Closed,Chat,2025-10-14,1
 Complaint::EDC::Security Risk Lock Issue,Closed,Chat,2025-10-16,2
@@ -6247,6 +6253,7 @@ Complaint::EDC::Security Risk Lock Issue,Closed,Slack,2025-11-02,1
 Complaint::EDC::Security Risk Lock Issue,Closed,Slack,2025-11-03,1
 Complaint::EDC::Security Risk Lock Issue,Closed,Slack,2025-11-06,1
 Complaint::EDC::Security Risk Lock Issue,Closed,Slack,2025-11-09,1
+Complaint::EDC::Security Risk Lock Issue,Helpdesk FU,Chat,2025-11-20,1
 Complaint::EDC::Sound Issue,Closed,Chat,2025-10-17,6
 Complaint::EDC::Sound Issue,Closed,Chat,2025-10-18,15
 Complaint::EDC::Sound Issue,Closed,Chat,2025-10-19,12
@@ -6303,9 +6310,8 @@ Complaint::EDC::System Reboot Issue,Closed,Slack,2025-11-11,2
 Complaint::EDC::System Reboot Issue,Closed,Slack,2025-11-14,1
 Complaint::EDC::System Reboot Issue,Operation Activation FU,Slack,2025-11-10,1
 Complaint::EDC::System Reboot Issue,Operation Activation FU,Slack,2025-11-20,1
-Complaint::EDC::System Reboot Issue,Product FU,Slack,2025-11-19,1
 Complaint::EDC::System Reboot Issue,Waiting for Merchant Reply,Chat,2025-11-19,1
-Complaint::EDC::System Reboot Issue,Waiting for Merchant Reply,Slack,2025-11-19,1
+Complaint::EDC::System Reboot Issue,Waiting for Merchant Reply,Slack,2025-11-19,2
 Complaint::EDC::System Reboot Issue,Waiting for Merchant Reply,Slack,2025-11-20,2
 Complaint::EDC::Transaction Failed,Closed,Chat,2025-10-05,1
 Complaint::EDC::Transaction Failed,Closed,Chat,2025-10-06,4
@@ -6423,7 +6429,7 @@ Complaint::EDC::Transaction Pending,BP NOBU FU,Chat,2025-11-12,1
 Complaint::EDC::Transaction Pending,BP NOBU FU,Chat,2025-11-15,4
 Complaint::EDC::Transaction Pending,BP NOBU FU,Chat,2025-11-17,3
 Complaint::EDC::Transaction Pending,BP NOBU FU,Chat,2025-11-18,1
-Complaint::EDC::Transaction Pending,BP NOBU FU,Chat,2025-11-20,1
+Complaint::EDC::Transaction Pending,BP NOBU FU,Chat,2025-11-20,2
 Complaint::EDC::Transaction Pending,BP NOBU FU,Slack,2025-11-12,1
 Complaint::EDC::Transaction Pending,BP NOBU FU,Slack,2025-11-13,1
 Complaint::EDC::Transaction Pending,BP NOBU FU,Slack,2025-11-14,4
@@ -6570,7 +6576,8 @@ Complaint::EDC::Transfer Success Not Received,Closed,Slack,2025-11-09,1
 Complaint::EDC::Transfer Success Not Received,Closed,Slack,2025-11-10,1
 Complaint::EDC::Transfer Success Not Received,Closed,Slack,2025-11-12,2
 Complaint::EDC::Transfer Success Not Received,Closed,Slack,2025-11-17,1
-Complaint::EDC::Transfer Success Not Received,Waiting for Merchant Reply,Slack,2025-11-19,3
+Complaint::EDC::Transfer Success Not Received,Closed,Slack,2025-11-19,2
+Complaint::EDC::Transfer Success Not Received,Waiting for Merchant Reply,Slack,2025-11-19,1
 Complaint::EDC::Unable to Add Bank Account,Closed,Chat,2025-10-05,2
 Complaint::EDC::Unable to Add Bank Account,Closed,Chat,2025-10-06,1
 Complaint::EDC::Unable to Add Bank Account,Closed,Chat,2025-10-07,4
@@ -6653,16 +6660,13 @@ Complaint::EDC::Unable to Add Bank Account,Closed,Slack,2025-11-14,9
 Complaint::EDC::Unable to Add Bank Account,Closed,Slack,2025-11-15,4
 Complaint::EDC::Unable to Add Bank Account,Closed,Slack,2025-11-16,1
 Complaint::EDC::Unable to Add Bank Account,Closed,Slack,2025-11-17,9
-Complaint::EDC::Unable to Add Bank Account,Closed,Slack,2025-11-18,6
-Complaint::EDC::Unable to Add Bank Account,Closed,Slack,2025-11-19,4
+Complaint::EDC::Unable to Add Bank Account,Closed,Slack,2025-11-18,8
+Complaint::EDC::Unable to Add Bank Account,Closed,Slack,2025-11-19,6
 Complaint::EDC::Unable to Add Bank Account,Closed,Web,2025-10-08,1
 Complaint::EDC::Unable to Add Bank Account,MVT FU,Chat,2025-11-19,1
-Complaint::EDC::Unable to Add Bank Account,MVT FU,Slack,2025-11-18,1
 Complaint::EDC::Unable to Add Bank Account,MVT FU,Slack,2025-11-19,1
 Complaint::EDC::Unable to Add Bank Account,MVT FU,Slack,2025-11-20,1
-Complaint::EDC::Unable to Add Bank Account,Risk FU,Slack,2025-11-18,1
 Complaint::EDC::Unable to Add Bank Account,Waiting for Merchant Reply,Chat,2025-11-19,1
-Complaint::EDC::Unable to Add Bank Account,Waiting for Merchant Reply,Slack,2025-11-19,2
 Complaint::EDC::Unable to Add Device/Pair,Closed,Chat,2025-10-29,1
 Complaint::EDC::Unable to Add Device/Pair,Closed,Chat,2025-11-08,1
 Complaint::EDC::Unable to Add Device/Pair,Closed,Chat,2025-11-16,2
@@ -6873,15 +6877,15 @@ Complaint::EDC::Unable to Read Simcard,Closed,Slack,2025-11-06,1
 Complaint::EDC::Unable to Read Simcard,Closed,Slack,2025-11-07,2
 Complaint::EDC::Unable to Read Simcard,Closed,Slack,2025-11-11,1
 Complaint::EDC::Unable to Read Simcard,Closed,Slack,2025-11-14,1
-Complaint::EDC::Unable to Read Simcard,Closed,Slack,2025-11-18,1
 Complaint::EDC::Unable to Read Simcard,Closed,Web,2025-11-08,1
 Complaint::EDC::Unable to Read Simcard,Closed,Web,2025-11-09,1
 Complaint::EDC::Unable to Read Simcard,Helpdesk FU,Chat,2025-11-20,1
 Complaint::EDC::Unable to Read Simcard,Helpdesk FU,Slack,2025-11-18,1
+Complaint::EDC::Unable to Read Simcard,Helpdesk FU,Slack,2025-11-20,1
 Complaint::EDC::Unable to Read Simcard,Operation Inbound FU,Slack,2025-11-17,1
+Complaint::EDC::Unable to Read Simcard,Waiting for Merchant Reply,Slack,2025-11-18,1
 Complaint::EDC::Unable to Update BukuAgen,Closed,Chat,2025-10-21,1
 Complaint::EDC::Unable to Update BukuAgen,Closed,Slack,2025-10-25,1
-Complaint::EDC::Unable to Use Chip Card,BP AJ FU,Slack,2025-11-19,1
 Complaint::EDC::Unable to Use Chip Card,Closed,Chat,2025-10-04,1
 Complaint::EDC::Unable to Use Chip Card,Closed,Chat,2025-10-05,2
 Complaint::EDC::Unable to Use Chip Card,Closed,Chat,2025-10-06,4
@@ -6925,6 +6929,7 @@ Complaint::EDC::Unable to Use Chip Card,Closed,Chat,2025-11-20,1
 Complaint::EDC::Unable to Use Chip Card,Closed,Email,2025-10-06,2
 Complaint::EDC::Unable to Use Chip Card,Closed,Email,2025-10-31,1
 Complaint::EDC::Unable to Use Chip Card,Closed,Email,2025-11-01,1
+Complaint::EDC::Unable to Use Chip Card,Closed,Email,2025-11-19,1
 Complaint::EDC::Unable to Use Chip Card,Closed,Instagram,2025-10-05,2
 Complaint::EDC::Unable to Use Chip Card,Closed,Instagram,2025-10-06,3
 Complaint::EDC::Unable to Use Chip Card,Closed,Instagram,2025-10-07,1
@@ -6974,14 +6979,14 @@ Complaint::EDC::Unable to Use Chip Card,Closed,Slack,2025-11-14,4
 Complaint::EDC::Unable to Use Chip Card,Closed,Slack,2025-11-15,1
 Complaint::EDC::Unable to Use Chip Card,Closed,Slack,2025-11-16,2
 Complaint::EDC::Unable to Use Chip Card,Closed,Slack,2025-11-17,3
+Complaint::EDC::Unable to Use Chip Card,Closed,Slack,2025-11-18,1
+Complaint::EDC::Unable to Use Chip Card,Closed,Slack,2025-11-19,1
+Complaint::EDC::Unable to Use Chip Card,Closed,Slack,2025-11-20,1
 Complaint::EDC::Unable to Use Chip Card,Closed,Web,2025-11-02,1
-Complaint::EDC::Unable to Use Chip Card,Helpdesk FU,Chat,2025-11-20,1
+Complaint::EDC::Unable to Use Chip Card,Helpdesk FU,Chat,2025-11-20,2
 Complaint::EDC::Unable to Use Chip Card,Waiting for Merchant Reply,Chat,2025-11-17,1
-Complaint::EDC::Unable to Use Chip Card,Waiting for Merchant Reply,Slack,2025-11-18,1
 Complaint::EDC::Unable to Use Chip Card,Waiting for Merchant Reply,Slack,2025-11-19,1
-Complaint::EDC::Unable to Use Chip Card,Waiting for Merchant Reply,Slack,2025-11-20,2
-Complaint::EDC::Unable to Use Swipe Magnetic Card,BP AJ FU,Slack,2025-11-19,1
-Complaint::EDC::Unable to Use Swipe Magnetic Card,Business Partner FU,Slack,2025-11-19,1
+Complaint::EDC::Unable to Use Chip Card,Waiting for Merchant Reply,Slack,2025-11-20,4
 Complaint::EDC::Unable to Use Swipe Magnetic Card,Closed,Chat,2025-09-19,1
 Complaint::EDC::Unable to Use Swipe Magnetic Card,Closed,Chat,2025-10-05,12
 Complaint::EDC::Unable to Use Swipe Magnetic Card,Closed,Chat,2025-10-06,8
@@ -7083,7 +7088,7 @@ Complaint::EDC::Unable to Use Swipe Magnetic Card,Closed,Slack,2025-11-15,5
 Complaint::EDC::Unable to Use Swipe Magnetic Card,Closed,Slack,2025-11-16,6
 Complaint::EDC::Unable to Use Swipe Magnetic Card,Closed,Slack,2025-11-17,10
 Complaint::EDC::Unable to Use Swipe Magnetic Card,Closed,Slack,2025-11-18,9
-Complaint::EDC::Unable to Use Swipe Magnetic Card,Closed,Slack,2025-11-19,5
+Complaint::EDC::Unable to Use Swipe Magnetic Card,Closed,Slack,2025-11-19,6
 Complaint::EDC::Unable to Use Swipe Magnetic Card,Closed,Web,2025-10-21,1
 Complaint::EDC::Unable to Use Swipe Magnetic Card,Closed,Web,2025-10-22,1
 Complaint::EDC::Unable to Use Swipe Magnetic Card,Closed,Web,2025-10-27,1
@@ -7091,7 +7096,8 @@ Complaint::EDC::Unable to Use Swipe Magnetic Card,Closed,Web,2025-11-01,1
 Complaint::EDC::Unable to Use Swipe Magnetic Card,Closed,Web,2025-11-13,1
 Complaint::EDC::Unable to Use Swipe Magnetic Card,Closed,Web,2025-11-14,2
 Complaint::EDC::Unable to Use Swipe Magnetic Card,Closed,Web,2025-11-15,1
-Complaint::EDC::Unable to Use Swipe Magnetic Card,Waiting for Merchant Reply,Slack,2025-11-19,2
+Complaint::EDC::Unable to Use Swipe Magnetic Card,Operation Inbound FU,Slack,2025-11-20,1
+Complaint::EDC::Unable to Use Swipe Magnetic Card,Waiting for Merchant Reply,Slack,2025-11-19,3
 Complaint::EDC::Unable to Use Swipe Magnetic Card,Waiting for Merchant Reply,Slack,2025-11-20,2
 Complaint::EDC::Veristore/Maxstore Password,Closed,Chat,2025-10-15,1
 Complaint::EDC::Veristore/Maxstore Password,Closed,Chat,2025-11-01,1
@@ -7103,7 +7109,7 @@ Complaint::EDC::Veristore/Maxstore/Appstore Not Installed,Closed,Slack,2025-10-2
 Complaint::EDC::Veristore/Maxstore/Appstore Not Installed,Closed,Slack,2025-11-02,1
 Complaint::EDC::Veristore/Maxstore/Appstore Not Installed,Closed,Slack,2025-11-05,1
 Complaint::EDC::Veristore/Maxstore/Appstore Not Installed,Closed,Slack,2025-11-09,1
-Complaint::EDC::Veristore/Maxstore/Appstore Not Installed,Waiting for Merchant Reply,Slack,2025-11-19,1
+Complaint::EDC::Veristore/Maxstore/Appstore Not Installed,Helpdesk FU,Slack,2025-11-19,1
 Complaint::Feedback Complimentary::Other,Closed,Chat,2025-09-05,1
 Complaint::Feedback Complimentary::Other,Closed,Chat,2025-09-25,1
 Complaint::Feedback Complimentary::Other,Closed,Instagram,2025-08-28,1
@@ -7275,7 +7281,7 @@ Complaint::Lending::Pencairan Issue,Closed,Chat,2025-11-07,1
 Complaint::Lending::Pencairan Issue,Closed,Chat,2025-11-12,1
 Complaint::Lending::Pencairan Issue,Closed,Chat,2025-11-13,2
 Complaint::Lending::Pencairan Issue,Closed,Chat,2025-11-17,7
-Complaint::Lending::Pencairan Issue,Closed,Chat,2025-11-19,1
+Complaint::Lending::Pencairan Issue,Closed,Chat,2025-11-19,2
 Complaint::Lending::Pencairan Issue,Closed,Email,2025-11-10,1
 Complaint::Lending::Pencairan Issue,Closed,Slack,2025-10-06,2
 Complaint::Lending::Pencairan Issue,Closed,Slack,2025-10-14,2
@@ -7288,8 +7294,7 @@ Complaint::Lending::Pencairan Issue,Closed,Slack,2025-11-06,1
 Complaint::Lending::Pencairan Issue,Closed,Slack,2025-11-10,1
 Complaint::Lending::Pencairan Issue,Closed,Slack,2025-11-17,1
 Complaint::Lending::Pencairan Issue,Closed,Slack,2025-11-18,1
-Complaint::Lending::Pencairan Issue,Lending FU,Chat,2025-11-19,1
-Complaint::Lending::Pencairan Issue,Lending FU,Chat,2025-11-20,1
+Complaint::Lending::Pencairan Issue,Lending FU,Chat,2025-11-20,2
 Complaint::Lending::Pinjaman Personal Disburs More Than SLA,Closed,Slack,2025-09-16,1
 Complaint::Lending::Pinjaman Personal Other Issue,Closed,Chat,2025-09-18,1
 Complaint::Lending::Pinjaman Personal Other Issue,Closed,Chat,2025-09-25,1
@@ -8588,6 +8593,7 @@ Complaint::Registration Reject - Refund,Closed,Slack,2025-11-13,1
 Complaint::Registration Reject - Refund,Closed,Slack,2025-11-15,1
 Complaint::Registration Reject - Refund,Closed,Slack,2025-11-17,1
 Complaint::Registration Reject - Refund,Closed,Slack,2025-11-18,1
+Complaint::Registration Reject - Refund,Closed,Slack,2025-11-20,1
 Complaint::Registration::Activation Issue,Closed,Chat,2025-08-30,1
 Complaint::Registration::Activation Issue,Closed,Chat,2025-09-14,2
 Complaint::Registration::Activation Issue,Closed,Chat,2025-09-28,3
@@ -8610,8 +8616,8 @@ Complaint::Registration::Activation Issue,Closed,Slack,2025-10-21,2
 Complaint::Registration::Activation Issue,Closed,Slack,2025-10-24,1
 Complaint::Registration::Activation Issue,Closed,Slack,2025-10-27,1
 Complaint::Registration::Activation Issue,Closed,Slack,2025-11-06,1
+Complaint::Registration::Activation Issue,Closed,Slack,2025-11-19,1
 Complaint::Registration::Activation Issue,Closed,Web,2025-09-14,1
-Complaint::Registration::Activation Issue,Waiting for Merchant Reply,Slack,2025-11-19,1
 Complaint::Registration::Activation OTS Issue,Closed,Chat,2025-10-08,1
 Complaint::Registration::Activation OTS Issue,Closed,Slack,2025-10-08,1
 Complaint::Registration::Activation OTS Issue,Closed,Slack,2025-10-28,1
@@ -9277,7 +9283,7 @@ Complaint::Transaction::Not record on App,Closed,Chat,2025-11-10,3
 Complaint::Transaction::Not record on App,Closed,Chat,2025-11-12,1
 Complaint::Transaction::Not record on App,Closed,Chat,2025-11-14,2
 Complaint::Transaction::Not record on App,Closed,Chat,2025-11-18,6
-Complaint::Transaction::Not record on App,Closed,Chat,2025-11-19,4
+Complaint::Transaction::Not record on App,Closed,Chat,2025-11-19,5
 Complaint::Transaction::Not record on App,Closed,Chat,2025-11-20,1
 Complaint::Transaction::Not record on App,Closed,Phone,2025-11-05,1
 Complaint::Transaction::Not record on App,Closed,Slack,2025-08-25,2
@@ -9323,9 +9329,9 @@ Complaint::Transaction::Not record on App,Closed,Slack,2025-11-10,1
 Complaint::Transaction::Not record on App,Closed,Slack,2025-11-13,1
 Complaint::Transaction::Not record on App,Closed,Slack,2025-11-18,4
 Complaint::Transaction::Not record on App,Closed,Slack,2025-11-19,7
-Complaint::Transaction::Not record on App,NOBU FU,Chat,2025-11-19,1
 Complaint::Transaction::Not record on App,NOBU FU,Slack,2025-11-19,1
 Complaint::Transaction::Not record on App,Waiting for Merchant Reply,Slack,2025-11-19,1
+Complaint::Transaction::Not record on App,Waiting for Merchant Reply,Slack,2025-11-20,1
 Complaint::V2 EDC:: BukuAgen Keep Loading,Closed,Chat,2025-08-22,2
 Complaint::V2 EDC:: BukuAgen Keep Loading,Closed,Chat,2025-08-23,3
 Complaint::V2 EDC:: BukuAgen Keep Loading,Closed,Chat,2025-08-24,2
@@ -9927,7 +9933,7 @@ Complaint::V2 EDC::Purchase KYB Issue,Closed,Slack,2025-09-23,1
 Complaint::V2 EDC::Purchase KYB Issue,Closed,Slack,2025-10-01,1
 Complaint::V2 EDC::Purchase KYB Issue,Closed,Slack,2025-11-12,1
 Complaint::V2 EDC::Purchase KYB Issue,Closed,Web,2025-08-22,1
-Complaint::V2 EDC::Registration Issue,Backend on Call FU,Slack,2025-11-19,1
+Complaint::V2 EDC::Registration Issue,Account Manager FU,Slack,2025-11-19,1
 Complaint::V2 EDC::Registration Issue,Closed,Chat,2025-08-27,2
 Complaint::V2 EDC::Registration Issue,Closed,Chat,2025-08-28,2
 Complaint::V2 EDC::Registration Issue,Closed,Chat,2025-08-29,3
@@ -10116,7 +10122,7 @@ Complaint::V2 EDC::Return,Closed,Chat,2025-09-07,1
 Complaint::V2 EDC::Return,Closed,Chat,2025-09-08,4
 Complaint::V2 EDC::Return,Closed,Chat,2025-09-10,1
 Complaint::V2 EDC::Return,Closed,Chat,2025-09-11,2
-Complaint::V2 EDC::Return,Closed,Chat,2025-09-13,3
+Complaint::V2 EDC::Return,Closed,Chat,2025-09-13,2
 Complaint::V2 EDC::Return,Closed,Chat,2025-09-14,1
 Complaint::V2 EDC::Return,Closed,Chat,2025-09-15,1
 Complaint::V2 EDC::Return,Closed,Chat,2025-09-16,1
@@ -12232,13 +12238,13 @@ Information::BukuWarung App::Migration Data,Closed,Slack,2025-11-13,1
 Information::BukuWarung App::Migration Data,Closed,Slack,2025-11-14,3
 Information::BukuWarung App::Migration Data,Closed,Slack,2025-11-17,3
 Information::BukuWarung App::Migration Data,Closed,Slack,2025-11-18,2
+Information::BukuWarung App::Migration Data,Closed,Slack,2025-11-19,1
 Information::BukuWarung App::Migration Data,Closed,Web,2025-08-28,1
 Information::BukuWarung App::Migration Data,Closed,Web,2025-09-23,1
 Information::BukuWarung App::Migration Data,Closed,Web,2025-10-10,1
 Information::BukuWarung App::Migration Data,Closed,Web,2025-11-06,1
 Information::BukuWarung App::Migration Data,Closed,Web,2025-11-13,1
 Information::BukuWarung App::Migration Data,Risk FU,Chat,2025-11-19,1
-Information::BukuWarung App::Migration Data,Waiting for Merchant Reply,Slack,2025-11-19,1
 Information::BukuWarung App::Migration Data,Waiting for Merchant Reply,Slack,2025-11-20,1
 Information::BukuWarung App::Multi Devices Sync,Closed,Chat,2025-08-22,3
 Information::BukuWarung App::Multi Devices Sync,Closed,Chat,2025-08-25,2
@@ -13720,6 +13726,7 @@ Information::EDC::Delivery Info,Closed,Slack,2025-11-15,1
 Information::EDC::Delivery Info,Closed,Slack,2025-11-17,1
 Information::EDC::Delivery Info,Closed,Slack,2025-11-18,2
 Information::EDC::Delivery Info,Closed,Slack,2025-11-19,6
+Information::EDC::Delivery Info,Closed,Slack,2025-11-20,1
 Information::EDC::Delivery Info,Closed,Web,2025-10-05,3
 Information::EDC::Delivery Info,Closed,Web,2025-10-06,3
 Information::EDC::Delivery Info,Closed,Web,2025-10-09,2
@@ -13903,7 +13910,7 @@ Information::EDC::Purchase Info,Closed,Chat,2025-11-16,1
 Information::EDC::Purchase Info,Closed,Chat,2025-11-17,4
 Information::EDC::Purchase Info,Closed,Chat,2025-11-18,7
 Information::EDC::Purchase Info,Closed,Chat,2025-11-19,5
-Information::EDC::Purchase Info,Closed,Chat,2025-11-20,3
+Information::EDC::Purchase Info,Closed,Chat,2025-11-20,4
 Information::EDC::Purchase Info,Closed,Instagram,2025-10-05,1
 Information::EDC::Purchase Info,Closed,Instagram,2025-10-06,2
 Information::EDC::Purchase Info,Closed,Instagram,2025-10-07,4
@@ -14037,7 +14044,7 @@ Information::Lending::Check Status,Closed,Chat,2025-11-14,3
 Information::Lending::Check Status,Closed,Chat,2025-11-16,1
 Information::Lending::Check Status,Closed,Chat,2025-11-17,1
 Information::Lending::Check Status,Closed,Chat,2025-11-18,4
-Information::Lending::Check Status,Closed,Chat,2025-11-19,4
+Information::Lending::Check Status,Closed,Chat,2025-11-19,5
 Information::Lending::Check Status,Closed,Email,2025-08-27,1
 Information::Lending::Check Status,Closed,Email,2025-11-09,1
 Information::Lending::Check Status,Closed,Facebook,2025-09-15,1
@@ -14071,7 +14078,7 @@ Information::Lending::Check Status,Closed,Slack,2025-11-18,2
 Information::Lending::Check Status,Closed,Web,2025-08-20,1
 Information::Lending::Check Status,Closed,Web,2025-08-22,1
 Information::Lending::Check Status,Closed,Web,2025-09-08,1
-Information::Lending::Check Status,Lending FU,Chat,2025-11-19,1
+Information::Lending::Check Status,Lending FU,Chat,2025-11-20,2
 Information::Lending::General Info,Closed,Chat,2025-08-20,2
 Information::Lending::General Info,Closed,Chat,2025-08-21,2
 Information::Lending::General Info,Closed,Chat,2025-08-22,5
@@ -14914,9 +14921,8 @@ Information::Registration::KYC Info,Closed,Slack,2025-10-11,1
 Information::Registration::KYC Info,Closed,Slack,2025-10-29,1
 Information::Registration::KYC Info,Closed,Slack,2025-11-08,1
 Information::Registration::KYC Info,Closed,Slack,2025-11-13,1
-Information::Registration::KYC Info,Closed,Slack,2025-11-19,1
+Information::Registration::KYC Info,Closed,Slack,2025-11-19,2
 Information::Registration::KYC Info,Closed,Web,2025-10-07,1
-Information::Registration::KYC Info,MVT FU,Slack,2025-11-19,1
 Information::Registration::Registration Info,Closed,Chat,2025-09-13,1
 Information::Registration::Registration Info,Closed,Chat,2025-09-14,3
 Information::Registration::Registration Info,Closed,Chat,2025-09-15,1
@@ -15535,7 +15541,7 @@ Others::All::No Context,Closed,Chat,2025-11-16,3
 Others::All::No Context,Closed,Chat,2025-11-17,17
 Others::All::No Context,Closed,Chat,2025-11-18,7
 Others::All::No Context,Closed,Chat,2025-11-19,7
-Others::All::No Context,Closed,Chat,2025-11-20,2
+Others::All::No Context,Closed,Chat,2025-11-20,3
 Others::All::No Context,Closed,Email,2025-10-07,2
 Others::All::No Context,Closed,Email,2025-10-08,4
 Others::All::No Context,Closed,Email,2025-10-09,2
@@ -15552,7 +15558,7 @@ Others::All::No Context,Closed,Email,2025-11-03,1
 Others::All::No Context,Closed,Email,2025-11-10,1
 Others::All::No Context,Closed,Email,2025-11-11,2
 Others::All::No Context,Closed,Email,2025-11-13,1
-Others::All::No Context,Closed,Email,2025-11-18,1
+Others::All::No Context,Closed,Email,2025-11-18,2
 Others::All::No Context,Closed,Instagram,2025-10-05,3
 Others::All::No Context,Closed,Instagram,2025-10-06,4
 Others::All::No Context,Closed,Instagram,2025-10-07,1
@@ -15591,7 +15597,6 @@ Others::All::No Context,Closed,Web,2025-11-10,2
 Others::All::No Context,Closed,Web,2025-11-11,3
 Others::All::No Context,Closed,Web,2025-11-12,1
 Others::All::No Context,Closed,Web,2025-11-14,2
-Others::All::No Context,Waiting for Merchant Reply,Email,2025-11-18,1
 Others::All::Spam,Closed,Chat,2025-11-12,1
 Others::All::Spam,Closed,Email,2025-10-27,1
 Others::All::Spam,Closed,Email,2025-10-31,1
@@ -15943,14 +15948,12 @@ Request::BukuWarung App::Migration Data,Closed,Web,2025-10-27,1
 Request::BukuWarung App::Migration Data,Closed,Web,2025-11-08,1
 Request::BukuWarung App::Migration Data,Closed,Web,2025-11-11,1
 Request::BukuWarung App::Migration Data,Closed,Web,2025-11-13,1
-Request::BukuWarung App::Migration Data,MVT FU,Chat,2025-11-17,1
-Request::BukuWarung App::Migration Data,MVT FU,Chat,2025-11-19,1
 Request::BukuWarung App::Migration Data,MVT FU,Chat,2025-11-20,1
-Request::BukuWarung App::Migration Data,Operation Activation FU,Chat,2025-11-17,1
-Request::BukuWarung App::Migration Data,Operation Activation FU,Chat,2025-11-19,2
+Request::BukuWarung App::Migration Data,Operation Activation FU,Chat,2025-11-17,2
+Request::BukuWarung App::Migration Data,Operation Activation FU,Chat,2025-11-19,3
 Request::BukuWarung App::Migration Data,Operation Activation FU,Slack,2025-11-20,1
 Request::BukuWarung App::Migration Data,Risk FU,Chat,2025-11-19,1
-Request::BukuWarung App::Migration Data,Risk FU,Chat,2025-11-20,1
+Request::BukuWarung App::Migration Data,Risk FU,Chat,2025-11-20,2
 Request::BukuWarung App::Other,Closed,Chat,2025-08-24,1
 Request::BukuWarung App::Other,Closed,Slack,2025-08-29,1
 Request::BukuWarung App::Other,Closed,Slack,2025-11-04,1
@@ -16210,7 +16213,7 @@ Request::BukuWarung App::Unblock Account,Closed,Chat,2025-11-16,4
 Request::BukuWarung App::Unblock Account,Closed,Chat,2025-11-17,7
 Request::BukuWarung App::Unblock Account,Closed,Chat,2025-11-18,2
 Request::BukuWarung App::Unblock Account,Closed,Chat,2025-11-19,3
-Request::BukuWarung App::Unblock Account,Closed,Chat,2025-11-20,1
+Request::BukuWarung App::Unblock Account,Closed,Chat,2025-11-20,2
 Request::BukuWarung App::Unblock Account,Closed,Email,2025-09-05,1
 Request::BukuWarung App::Unblock Account,Closed,Email,2025-09-06,1
 Request::BukuWarung App::Unblock Account,Closed,Email,2025-09-16,1
@@ -16363,6 +16366,7 @@ Request::BukuWarung App::Unblock Account,Closed,Web,2025-11-12,4
 Request::BukuWarung App::Unblock Account,Closed,Web,2025-11-14,6
 Request::BukuWarung App::Unblock Account,Closed,Web,2025-11-15,4
 Request::BukuWarung App::Unblock Account,Closed,Web,2025-11-19,1
+Request::BukuWarung App::Unblock Account,Helpdesk FU,Chat,2025-11-20,1
 Request::BukuWarung App::Unblock Account,MH FU,Chat,2025-11-20,1
 Request::DigiPay::Transaction History,Closed,Chat,2025-10-06,2
 Request::DigiPay::Transaction History,Closed,Chat,2025-10-09,1
@@ -17064,9 +17068,8 @@ Request::MS Team::OTP Reset,Closed,Slack,2025-11-09,1
 Request::MS Team::OTP Reset,Closed,Slack,2025-11-10,1
 Request::MS Team::OTP Reset,Closed,Slack,2025-11-12,2
 Request::MS Team::OTP Reset,Closed,Slack,2025-11-17,2
-Request::MS Team::OTP Reset,Closed,Slack,2025-11-19,2
+Request::MS Team::OTP Reset,Closed,Slack,2025-11-19,3
 Request::MS Team::OTP Reset,Closed,Web,2025-08-23,2
-Request::MS Team::OTP Reset,Waiting for Merchant Reply,Slack,2025-11-19,1
 Request::MS Team::Prospero Related,Closed,Slack,2025-09-23,1
 Request::MS Team::Prospero Related,Closed,Slack,2025-10-29,1
 Request::MS Team::Prospero Related,Closed,Slack,2025-11-04,1
