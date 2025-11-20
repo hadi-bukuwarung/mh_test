@@ -215,6 +215,8 @@ function processAggregatedData(rows, headers) {
 
     if (!catCol) throw new Error(`Missing 'real_category' column.`);
     if (!dateCol) throw new Error(`Missing Date column.`);
+    // Check for num_of_ticket if we expect aggregated data
+    if (!countCol) console.warn("Warning: 'num_of_ticket' column not found. Assuming raw data (1 row = 1 ticket).");
 
     allRawRows = []; 
 
@@ -225,20 +227,22 @@ function processAggregatedData(rows, headers) {
         const dateStr = normalizeDate(row[dateCol]);
         const channel = channelCol ? (row[channelCol] || 'Unknown') : 'Unknown';
         const status = statusCol ? (row[statusCol] || 'Open') : 'Open';
+        
         let count = 1;
-
+        // CRITICAL FIX: Use num_of_ticket value if available
         if (countCol && row[countCol]) {
-            count = parseInt(row[countCol], 10);
-            if (isNaN(count)) count = 0;
+            const parsedCount = parseInt(row[countCol], 10);
+            if (!isNaN(parsedCount)) {
+                count = parsedCount;
+            }
         }
 
         // FIX: Handle Missing Category by defaulting to 'Uncategorized'
-        // This prevents rows from being dropped if category is empty
         if (!category || category.trim() === '') {
             category = 'Uncategorized';
         }
 
-        if (!dateStr) continue; // Skip only if Date is invalid
+        if (!dateStr) continue; 
 
         allRawRows.push({
             category: category,
@@ -356,7 +360,7 @@ function aggregateData() {
     updateTableForDate(latestDate);
 }
 
-// ... (rest of script.js remains unchanged: updateStatusScorecard, renderStatusHealthTable, populateFilterOptions, updateSubcategoryOptions, getMetricsForDate, updateTableForDate, sortData, renderTable, renderAnomalyFeed, renderTrendTable, renderWeeklyTable, renderChannelTable, escapeHtml, createAnomalyBadge, showError) ...
+// ... (Rest of the file remains unchanged: updateStatusScorecard, renderStatusHealthTable, populateFilterOptions, updateSubcategoryOptions, getMetricsForDate, updateTableForDate, sortData, renderTable, renderAnomalyFeed, renderTrendTable, renderWeeklyTable, renderChannelTable, escapeHtml, createAnomalyBadge, showError) ...
 
 function updateStatusScorecard(dateStr) {
     const stats = allStatusData[dateStr] || { total: 0, open: 0, pending: 0, closed: 0 };
