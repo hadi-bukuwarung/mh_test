@@ -66,75 +66,129 @@ async function fetchExternalMetadata() {
 }
 
 function setupEventListeners() {
-    document.getElementById('global-source-filter').addEventListener('change', function(e) {
-        filters.globalSource = e.target.value;
-        aggregateData(); 
-        refreshCurrentView();
-    });
+    // Global source filter (All vs Non-closed)
+    const globalSourceEl = document.getElementById('global-source-filter');
+    if (globalSourceEl) {
+        globalSourceEl.addEventListener('change', function (e) {
+            filters.globalSource = e.target.value;
+            aggregateData();
+            refreshCurrentView();
+        });
+    }
 
-    document.getElementById('dashboard-date-picker').addEventListener('change', function(e) {
-        const selectedDate = e.target.value;
-        // Allow selecting any date even if not in set (might be empty day)
-        filters.date = selectedDate;
-        
-        // Update UI text
-        const [y, m, d] = selectedDate.split('-').map(Number);
-        const dateObj = new Date(y, m - 1, d);
-        document.getElementById('current-date').textContent = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        
-        updateTableForDate(selectedDate);
-    });
+    // Date picker (optional, your HTML currently does not have this)
+    const datePickerEl = document.getElementById('dashboard-date-picker');
+    if (datePickerEl) {
+        datePickerEl.addEventListener('change', function (e) {
+            const selectedDate = e.target.value;
+            filters.date = selectedDate;
 
+            // Update date label
+            try {
+                const [y, m, d] = selectedDate.split('-').map(Number);
+                const dateObj = new Date(y, m - 1, d);
+                document.getElementById('current-date').textContent =
+                    dateObj.toLocaleDateString('en-GB', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+            } catch (err) {
+                document.getElementById('current-date').textContent = selectedDate;
+            }
+
+            updateTableForDate(selectedDate);
+        });
+    }
+
+    // Sorting on Today vs Baseline table
     const headers = document.querySelectorAll('#data-table th[data-sort]');
     headers.forEach(header => {
-        header.addEventListener('click', function() {
+        header.addEventListener('click', function () {
             const sortKey = this.getAttribute('data-sort');
             sortData(sortKey);
         });
     });
-    
-    document.getElementById('status-filter').addEventListener('change', function(e) {
-        filters.status = e.target.value;
-        renderTable();
-    });
 
-    document.getElementById('trend-category-filter').addEventListener('change', function(e) {
-        filters.trendCategory = e.target.value;
-        filters.trendSubcategory = 'all';
-        document.getElementById('trend-subcategory-filter').value = 'all';
-        updateSubcategoryOptions('trend');
-        renderTrendTable();
-    });
+    // Anomaly status filter
+    const statusFilterEl = document.getElementById('status-filter');
+    if (statusFilterEl) {
+        statusFilterEl.addEventListener('change', function (e) {
+            filters.status = e.target.value;
+            renderMainTable();
+        });
+    }
 
-    document.getElementById('trend-subcategory-filter').addEventListener('change', function(e) {
-        filters.trendSubcategory = e.target.value;
-        renderTrendTable();
-    });
+    // Daily trend filters
+    const trendCategoryEl = document.getElementById('trend-category-filter');
+    if (trendCategoryEl) {
+        trendCategoryEl.addEventListener('change', function (e) {
+            filters.trendCategory = e.target.value;
+            filters.trendSubcategory = 'all';
+            const subFilter = document.getElementById('trend-subcategory-filter');
+            if (subFilter) subFilter.value = 'all';
+            updateSubcategoryOptions('trend');
+            renderTrendTable();
+        });
+    }
 
-    document.getElementById('weekly-category-filter').addEventListener('change', function(e) {
-        filters.weeklyCategory = e.target.value;
-        filters.weeklySubcategory = 'all';
-        document.getElementById('weekly-subcategory-filter').value = 'all';
-        updateSubcategoryOptions('weekly');
-        renderWeeklyTable();
-    });
+    const trendSubcategoryEl = document.getElementById('trend-subcategory-filter');
+    if (trendSubcategoryEl) {
+        trendSubcategoryEl.addEventListener('change', function (e) {
+            filters.trendSubcategory = e.target.value;
+            renderTrendTable();
+        });
+    }
 
-    document.getElementById('weekly-subcategory-filter').addEventListener('change', function(e) {
-        filters.weeklySubcategory = e.target.value;
-        renderWeeklyTable();
-    });
+    // Weekly trend filters
+    const weeklyCategoryEl = document.getElementById('weekly-category-filter');
+    if (weeklyCategoryEl) {
+        weeklyCategoryEl.addEventListener('change', function (e) {
+            filters.weeklyCategory = e.target.value;
+            filters.weeklySubcategory = 'all';
+            const weeklySub = document.getElementById('weekly-subcategory-filter');
+            if (weeklySub) weeklySub.value = 'all';
+            updateSubcategoryOptions('weekly');
+            renderWeeklyTable();
+        });
+    }
 
-    document.getElementById('health-status-filter').addEventListener('change', function(e) {
-        filters.healthStatus = e.target.value;
-        renderStatusHealthTable();
-    });
+    const weeklySubcategoryEl = document.getElementById('weekly-subcategory-filter');
+    if (weeklySubcategoryEl) {
+        weeklySubcategoryEl.addEventListener('change', function (e) {
+            filters.weeklySubcategory = e.target.value;
+            renderWeeklyTable();
+        });
+    }
 
-    document.getElementById('tab-dashboard').addEventListener('click', () => switchTab('dashboard'));
-    document.getElementById('tab-trends').addEventListener('click', () => switchTab('trends'));
-    document.getElementById('tab-weekly').addEventListener('click', () => switchTab('weekly'));
-    document.getElementById('tab-channel').addEventListener('click', () => switchTab('channel'));
-    document.getElementById('tab-status').addEventListener('click', () => switchTab('status'));
-    document.getElementById('tab-feed').addEventListener('click', () => switchTab('feed'));
+    // Status health filter
+    const healthStatusEl = document.getElementById('health-status-filter');
+    if (healthStatusEl) {
+        healthStatusEl.addEventListener('change', function (e) {
+            filters.healthStatus = e.target.value;
+            renderStatusHealthTable();
+        });
+    }
+
+    // Tabs
+    const tabDashboard = document.getElementById('tab-dashboard');
+    if (tabDashboard) tabDashboard.addEventListener('click', () => switchTab('dashboard'));
+
+    const tabTrends = document.getElementById('tab-trends');
+    if (tabTrends) tabTrends.addEventListener('click', () => switchTab('trends'));
+
+    const tabWeekly = document.getElementById('tab-weekly');
+    if (tabWeekly) tabWeekly.addEventListener('click', () => switchTab('weekly'));
+
+    const tabChannel = document.getElementById('tab-channel');
+    if (tabChannel) tabChannel.addEventListener('click', () => switchTab('channel'));
+
+    const tabStatus = document.getElementById('tab-status');
+    if (tabStatus) tabStatus.addEventListener('click', () => switchTab('status'));
+
+    const tabFeed = document.getElementById('tab-feed');
+    if (tabFeed) tabFeed.addEventListener('click', () => switchTab('feed'));
 }
 
 function refreshCurrentView() {
