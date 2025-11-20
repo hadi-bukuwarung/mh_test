@@ -1,12 +1,12 @@
 // Global state
-let allCategoryData = {}; // Map: Category -> Date -> Count
-let allChannelData = {}; // Map: Channel -> Date -> Count
+let allCategoryData = {}; 
+let allChannelData = {}; 
+let allWeeklyData = {}; 
+let allStatusData = {}; 
+let allRawRows = []; 
 let allDatesSet = new Set();
-let availableDates = []; // Sorted descending (Index 0 = Newest)
-let allWeeklyData = {}; // Map: Category -> WeekStr -> Count
-let availableWeeks = []; // Sorted descending (YYYY-MM-DD of Sunday)
-let allStatusData = {}; // Map: Date -> { Open: count, Pending: count, Closed: count }
-let allRawRows = []; // Store valid rows for detail views (Status Health)
+let availableDates = []; 
+let availableWeeks = []; 
 let currentDate = null;
 let tableData = [];
 let sortConfig = { key: 'today_count', direction: 'desc' };
@@ -19,7 +19,8 @@ let filters = {
     trendSubcategory: 'all',
     weeklyCategory: 'all',
     weeklySubcategory: 'all',
-    healthStatus: 'all_non_closed' 
+    healthStatus: 'all_non_closed',
+    globalSource: 'all' // 'all' or 'non_closed'
 };
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -28,13 +29,12 @@ document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
 });
 
-// Fetch metadata.json
+// ... metadata fetch function same as before ...
 async function fetchExternalMetadata() {
     const label = document.getElementById('last-updated');
     try {
         const response = await fetch('metadata.json');
         if (!response.ok) throw new Error('Metadata file missing');
-        
         const data = await response.json();
         if (data.last_updated) {
             const dateObj = new Date(data.last_updated);
@@ -48,7 +48,6 @@ async function fetchExternalMetadata() {
         }
         throw new Error('Invalid metadata format');
     } catch (err) {
-        // Fallback: Check CSV Last-Modified Header
         try {
             const csvResponse = await fetch('zoho_ticket.csv', { method: 'HEAD' });
             const lastMod = csvResponse.headers.get('Last-Modified');
@@ -68,7 +67,13 @@ async function fetchExternalMetadata() {
 }
 
 function setupEventListeners() {
-    // Sorting (Dashboard)
+    // NEW: Global Data Source Filter
+    document.getElementById('global-source-filter').addEventListener('change', function(e) {
+        filters.globalSource = e.target.value;
+        aggregateData(); // Re-aggregate based on selection
+        refreshCurrentView();
+    });
+
     const headers = document.querySelectorAll('#data-table th[data-sort]');
     headers.forEach(header => {
         header.addEventListener('click', function() {
@@ -77,13 +82,11 @@ function setupEventListeners() {
         });
     });
     
-    // Dashboard Filters
     document.getElementById('status-filter').addEventListener('change', function(e) {
         filters.status = e.target.value;
         renderTable();
     });
 
-    // Trend Filters
     document.getElementById('trend-category-filter').addEventListener('change', function(e) {
         filters.trendCategory = e.target.value;
         filters.trendSubcategory = 'all';
@@ -97,7 +100,6 @@ function setupEventListeners() {
         renderTrendTable();
     });
 
-    // Weekly Filters
     document.getElementById('weekly-category-filter').addEventListener('change', function(e) {
         filters.weeklyCategory = e.target.value;
         filters.weeklySubcategory = 'all';
@@ -111,19 +113,26 @@ function setupEventListeners() {
         renderWeeklyTable();
     });
 
-    // Status Health Filter
     document.getElementById('health-status-filter').addEventListener('change', function(e) {
         filters.healthStatus = e.target.value;
         renderStatusHealthTable();
     });
 
-    // Tabs
     document.getElementById('tab-dashboard').addEventListener('click', () => switchTab('dashboard'));
     document.getElementById('tab-trends').addEventListener('click', () => switchTab('trends'));
     document.getElementById('tab-weekly').addEventListener('click', () => switchTab('weekly'));
     document.getElementById('tab-channel').addEventListener('click', () => switchTab('channel'));
     document.getElementById('tab-status').addEventListener('click', () => switchTab('status'));
     document.getElementById('tab-feed').addEventListener('click', () => switchTab('feed'));
+}
+
+// Helper to refresh whichever view is currently visible
+function refreshCurrentView() {
+    // We re-run the switchTab logic for the current active tab
+    const activeBtn = document.querySelector('.nav-btn.active');
+    if (activeBtn) {
+        activeBtn.click();
+    }
 }
 
 function switchTab(tabName) {
@@ -177,7 +186,6 @@ function loadAndProcessData() {
 function processAggregatedData(rows, headers) {
     if (!rows || rows.length === 0) throw new Error("CSV file is empty");
 
-    // Fix: Return null if not found, so fallback || works correctly
     const findHeader = (target) => {
         if (!headers) return null;
         const match = headers.find(h => h.trim().toLowerCase().replace(/^[\uFEFF\n\r]+/, '') === target.toLowerCase());
@@ -185,27 +193,58 @@ function processAggregatedData(rows, headers) {
     };
 
     const catCol = findHeader('real_category');
-    
-    // Priority check for Date columns
     const dateCol = findHeader('Created Time') || findHeader('created time') || findHeader('date') || findHeader('Date') || findHeader('time');
-    
     const countCol = findHeader('num_of_ticket');
     const channelCol = findHeader('channel') || findHeader('Channel');
     const statusCol = findHeader('status') || findHeader('Status');
 
-    if (!catCol) {
-        throw new Error(`Missing 'real_category' column. Found headers: ${headers.join(', ')}`);
-    }
-    if (!dateCol) {
-         throw new Error(`Missing Date column (checked: 'Created Time', 'date'). Found headers: ${headers.join(', ')}`);
+    if (!catCol) throw new Error(`Missing 'real_category' column.`);
+    if (!dateCol) throw new Error(`Missing Date column.`);
+
+    allRawRows = []; 
+
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const category = row[catCol];
+        
+        let rawDateStr = row[dateCol];
+        if (!rawDateStr) continue;
+        let dateStr = rawDateStr.split(' ')[0].trim(); 
+        
+        const channel = channelCol ? (row[channelCol] || 'Unknown') : 'Unknown';
+        const status = statusCol ? (row[statusCol] || 'Open') : 'Open';
+        let count = 1;
+
+        if (countCol && row[countCol]) {
+            count = parseInt(row[countCol], 10);
+            if (isNaN(count)) count = 0;
+        }
+
+        if (!category || !dateStr || dateStr.length < 10) continue;
+
+        allRawRows.push({
+            category: category,
+            date: dateStr,
+            status: status, 
+            channel: channel,
+            count: count
+        });
     }
 
+    // Initial Aggregation (Default: All Tickets)
+    aggregateData();
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('view-dashboard').style.display = 'block';
+}
+
+// NEW: Dynamic Aggregation based on Global Filter
+function aggregateData() {
     allCategoryData = {};
     allChannelData = {};
     allStatusData = {};
     allDatesSet = new Set();
     allWeeklyData = {};
-    allRawRows = []; 
     let weeklySet = new Set();
 
     const getSunday = (d) => {
@@ -222,40 +261,17 @@ function processAggregatedData(rows, headers) {
         return `${y}-${m}-${d}`;
     };
 
-    for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
-        const category = row[catCol];
-        
-        let rawDateStr = row[dateCol];
-        if (!rawDateStr) continue;
-        
-        // Safe split to extract YYYY-MM-DD
-        let dateStr = rawDateStr.split(' ')[0].trim(); 
-        
-        const channel = channelCol ? (row[channelCol] || 'Unknown') : 'Unknown';
-        const status = statusCol ? (row[statusCol] || 'Open') : 'Open';
-        let count = 1;
+    // Filter logic
+    const includeClosed = filters.globalSource === 'all';
 
-        if (countCol && row[countCol]) {
-            count = parseInt(row[countCol], 10);
-            if (isNaN(count)) count = 0;
-        }
+    for (const row of allRawRows) {
+        const statusLower = row.status.toLowerCase();
+        const isClosed = statusLower.includes('closed');
 
-        if (!category || !dateStr) continue;
-        if (dateStr.length < 10) continue; 
+        // Global Filter check
+        if (!includeClosed && isClosed) continue;
 
-        // --- Status Normalization for Scorecard ---
-        const statusLower = status.toLowerCase();
-        let normalizedStatus = 'Pending'; 
-        if (statusLower === 'open') normalizedStatus = 'Open';
-        else if (statusLower === 'closed') normalizedStatus = 'Closed';
-        
-        allRawRows.push({
-            category: category,
-            date: dateStr,
-            status: status, 
-            count: count
-        });
+        const { category, date: dateStr, channel, count, status } = row;
 
         allDatesSet.add(dateStr);
         
@@ -269,15 +285,22 @@ function processAggregatedData(rows, headers) {
         if (!allChannelData[channel][dateStr]) allChannelData[channel][dateStr] = 0;
         allChannelData[channel][dateStr] += count;
 
-        // 3. Status Data (Daily)
+        // 3. Status Data (Always track all statuses for scorecard, OR filter?)
+        // Usually scorecard should show true health regardless of filter, 
+        // BUT if we are filtering the dataset, we should probably filter this too to match graphs.
+        // Let's respect the global filter for consistency.
         if (!allStatusData[dateStr]) allStatusData[dateStr] = { total: 0, open: 0, pending: 0, closed: 0 };
         allStatusData[dateStr].total += count;
         
+        let normalizedStatus = 'Pending'; 
+        if (statusLower === 'open') normalizedStatus = 'Open';
+        else if (statusLower === 'closed') normalizedStatus = 'Closed';
+
         if (normalizedStatus === 'Open') allStatusData[dateStr].open += count;
         else if (normalizedStatus === 'Closed') allStatusData[dateStr].closed += count;
         else allStatusData[dateStr].pending += count;
 
-        // 4. Weekly Data (Sunday Start)
+        // 4. Weekly Data
         const [y, m, d] = dateStr.split('-').map(Number);
         const dateObj = new Date(y, m - 1, d);
         const sundayObj = getSunday(dateObj);
@@ -290,9 +313,13 @@ function processAggregatedData(rows, headers) {
     }
 
     availableDates = Array.from(allDatesSet).sort().reverse(); 
-    if (availableDates.length === 0) throw new Error("No valid dates found in parsed rows.");
-
     availableWeeks = Array.from(weeklySet).sort().reverse();
+
+    if (availableDates.length === 0) {
+        // Handle empty result (e.g., if filtering non-closed but all are closed)
+        currentDate = null;
+        return; 
+    }
 
     populateFilterOptions('trend');
     populateFilterOptions('weekly');
@@ -309,13 +336,10 @@ function processAggregatedData(rows, headers) {
     }
 
     updateStatusScorecard(latestDate);
-
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('view-dashboard').style.display = 'block';
-
     updateTableForDate(latestDate);
 }
 
+// ... updateStatusScorecard, renderTable, etc ... (These stay mostly the same, just using updated globals)
 function updateStatusScorecard(dateStr) {
     const stats = allStatusData[dateStr] || { total: 0, open: 0, pending: 0, closed: 0 };
     
@@ -333,20 +357,32 @@ function updateStatusScorecard(dateStr) {
     document.getElementById('health-pending').style.color = '#fde047'; 
 }
 
-// --- Page 5: Status Health Table Logic ---
+// ... rest of the render functions (renderStatusHealthTable, etc.) ...
+// They will naturally use the filtered global variables from aggregateData()
 
+// --- Page 5: Status Health Table Logic ---
 function renderStatusHealthTable() {
     const tbody = document.getElementById('health-table-body');
     
+    // Filter Data from allRawRows based on healthStatus AND global filter
+    const includeClosed = filters.globalSource === 'all';
+    
     const filteredRows = allRawRows.filter(row => {
         const statusLower = row.status.toLowerCase();
-        if (statusLower.includes('closed')) return false; 
+        const isClosed = statusLower.includes('closed');
+
+        // Apply Global Filter Logic FIRST
+        if (!includeClosed && isClosed) return false;
+
+        // Apply Page-Specific Logic
+        if (isClosed) return false; // Status Health View explicitly requested "List of non closed tickets" in previous prompts
 
         if (filters.healthStatus === 'open') {
             return statusLower === 'open';
         } else if (filters.healthStatus === 'pending') {
             return statusLower !== 'open'; 
         } 
+        
         return true;
     });
 
@@ -388,8 +424,7 @@ function renderStatusHealthTable() {
     tbody.innerHTML = htmlBuffer;
 }
 
-// --- Filters Logic ---
-
+// ... Re-include all other helper functions (populateFilterOptions, updateSubcategoryOptions, etc) as they were ...
 function populateFilterOptions(viewType) {
     const categories = new Set();
     const sourceData = viewType === 'weekly' ? allWeeklyData : allCategoryData;
@@ -452,8 +487,6 @@ function updateSubcategoryOptions(viewType) {
     }
 }
 
-
-// --- Core Calculation Logic ---
 function getMetricsForDate(category, dateStr) {
     const dateMap = allCategoryData[category] || {};
     const todayCount = dateMap[dateStr] || 0;
@@ -510,8 +543,6 @@ function getMetricsForDate(category, dateStr) {
         percentChange
     };
 }
-
-// --- Page 1: Dashboard ---
 
 function updateTableForDate(dateStr) {
     currentDate = dateStr;
@@ -588,8 +619,6 @@ function renderTable() {
     tbody.innerHTML = htmlBuffer;
 }
 
-// --- Page 3: Anomaly Feed Logic ---
-
 function renderAnomalyFeed() {
     const tbody = document.getElementById('feed-table-body');
     const historyWindow = 14;
@@ -643,8 +672,6 @@ function renderAnomalyFeed() {
 
     tbody.innerHTML = htmlBuffer;
 }
-
-// --- Page 2: Daily Trend Logic ---
 
 function renderTrendTable() {
     const tbody = document.getElementById('trend-table-body');
@@ -711,8 +738,6 @@ function renderTrendTable() {
     tbody.innerHTML = rowsHTML;
 }
 
-// --- Page 3: Weekly Trend Logic ---
-
 function renderWeeklyTable() {
     const tbody = document.getElementById('weekly-table-body');
     const thead = document.getElementById('weekly-header-row');
@@ -722,7 +747,6 @@ function renderWeeklyTable() {
         return;
     }
 
-    // Show last 12 weeks including latest
     const trendWeeks = availableWeeks.slice(0, 12);
     let headerHTML = '<th class="category-cell">Category</th><th class="text-center">% Changes</th>';
     trendWeeks.forEach((week, index) => {
@@ -782,8 +806,6 @@ function renderWeeklyTable() {
     tbody.innerHTML = rowsHTML;
 }
 
-// --- Page 4: Channel Trend Logic (New) ---
-
 function renderChannelTable() {
     const tbody = document.getElementById('channel-table-body');
     const thead = document.getElementById('channel-header-row');
@@ -801,7 +823,6 @@ function renderChannelTable() {
     const recentDate = trendDates[0]; 
     const prevDate = trendDates[1];   
 
-    // Sort channels by volume on recent date
     const channels = Object.keys(allChannelData).sort((a, b) => (allChannelData[b][recentDate] || 0) - (allChannelData[a][recentDate] || 0));
 
     let rowsHTML = '';
@@ -838,7 +859,6 @@ function renderChannelTable() {
     tbody.innerHTML = rowsHTML;
 }
 
-// --- Utilities ---
 function escapeHtml(text) {
     if (!text) return '';
     return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
