@@ -11,7 +11,17 @@
         <div class="header">
             <div class="header-top">
                 <h1>Ticket Anomaly Dashboard</h1>
-                <div id="last-updated" class="last-updated-tag">Loading update time...</div>
+                <div class="header-controls">
+                    <!-- NEW: Global Data Source Filter -->
+                    <div class="global-filter">
+                        <label for="global-source-filter">Data Source:</label>
+                        <select id="global-source-filter">
+                            <option value="all">All Tickets (Incoming Volume)</option>
+                            <option value="non_closed">Non-Closed Only (Active)</option>
+                        </select>
+                    </div>
+                    <div id="last-updated" class="last-updated-tag">Loading update time...</div>
+                </div>
             </div>
             <p id="current-date"></p>
         </div>
@@ -49,7 +59,7 @@
         <div id="view-dashboard" class="view-section" style="display: none;">
             <div class="filters">
                 <div class="filter-group">
-                    <label for="status-filter">Status:</label>
+                    <label for="status-filter">Anomaly Status:</label>
                     <select id="status-filter">
                         <option value="all">All Statuses</option>
                         <option value="anomaly">Anomalies Only</option>
@@ -179,7 +189,7 @@
 
         <!-- Page 5: Status Health View -->
         <div id="view-status" class="view-section" style="display: none;">
-            <!-- Status Health Scorecard (Moved Here) -->
+            <!-- Status Health Scorecard -->
             <div class="scorecard-container">
                 <div class="scorecard-title">Status Health (Today)</div>
                 <div class="scorecard-metrics">
